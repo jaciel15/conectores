@@ -66,6 +66,8 @@ lector.readAsDataURL(archivo);
 
 function generarPinout()
 {
+alert(“GENERAR PINOUT FUNCIONA”);
+}
 let contenedor = document.getElementById("pinout");
 
 let html = "";
