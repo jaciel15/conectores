@@ -59,3 +59,55 @@ function mostrarFoto(event)
 
   lector.readAsDataURL(archivo);
 }
+function generarPinout()
+{
+  let html = '';
+
+  for(let i=1;i<=24;i++)
+  {
+    html += `
+    <div class="pin" onclick="editarPin(this,${i})">
+      ${i}
+    </div>
+    `;
+  }
+
+  document.getElementById('pinout').innerHTML = html;
+}
+
+function editarPin(pin,numero)
+{
+  let opcion = prompt(
+`PIN ${numero}
+
+1 = 12V
+2 = GND
+3 = RPM
+4 = Velocidad`
+  );
+
+  if(opcion=="1")
+  {
+    pin.style.background="#ff0000";
+    pin.style.color="#fff";
+  }
+
+  if(opcion=="2")
+  {
+    pin.style.background="#000000";
+    pin.style.color="#fff";
+    pin.style.border="2px solid #00ffff";
+  }
+
+  if(opcion=="3")
+  {
+    pin.style.background="#8000ff";
+    pin.style.color="#fff";
+  }
+
+  if(opcion=="4")
+  {
+    pin.style.background="#8B4513";
+    pin.style.color="#fff";
+  }
+}
