@@ -199,7 +199,6 @@ margin-bottom:35px;
 button{
 
 width:88%;
-
 max-width:700px;
 
 height:90px;
@@ -208,25 +207,54 @@ margin:16px;
 
 border-radius:25px;
 
-border:2px solid var(--turquesa);
+border:2px solid transparent;
 
-background:linear-gradient(
-180deg,
-#0A171A,
-#000000
-);
+/* FONDO NEGRO OEM */
+background:
+linear-gradient(#050505,#050505) padding-box,
 
-color:var(--turquesa);
+/* BORDE TURQUESA → BLANCO → AMARILLO */
+linear-gradient(
+90deg,
+#00E5FF,
+#00FFFF,
+#FFFFFF,
+#FFD800
+) border-box;
+
+color:#FFFFFF;
 
 font-size:22px;
-
 font-weight:bold;
 
 letter-spacing:1px;
 
 box-shadow:
-0 0 10px var(--turquesa),
-0 0 25px var(--turquesa);
+
+0 0 10px #00E5FF,
+0 0 20px #00FFFF,
+0 0 30px #FFFFFF,
+0 0 45px #FFD800;
+
+cursor:pointer;
+
+transition:0.25s;
+}
+
+button:active{
+transform:scale(.98);
+}
+
+button:hover{
+
+box-shadow:
+
+0 0 15px #00E5FF,
+0 0 30px #00FFFF,
+0 0 45px #FFFFFF,
+0 0 60px #FFD800;
+
+}
 
 cursor:pointer;
 
