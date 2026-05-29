@@ -37,7 +37,17 @@ Iniciando Sistema...
 
 <h1>CONNECTOR GENERATOR</h1>
 
-<button>📷 ESCANEAR CONECTOR</button>
+<button onclick="document.getElementById('foto').click()">
+📷 ESCANEAR CONECTOR
+</button>
+
+<input
+id="foto"
+type="file"
+accept="image/*"
+capture="environment"
+style="display:none"
+onchange="mostrarFoto(event)">
 
 <button>➕ NUEVO CONECTOR</button>
 
