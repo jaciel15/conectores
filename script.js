@@ -44,3 +44,18 @@ menu.style.display="block";
 }
 
 },200);
+function mostrarFoto(event)
+{
+  const archivo = event.target.files[0];
+
+  if(!archivo) return;
+
+  const lector = new FileReader();
+
+  lector.onload = function(e)
+  {
+    document.getElementById("preview").src = e.target.result;
+  };
+
+  lector.readAsDataURL(archivo);
+}
