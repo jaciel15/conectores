@@ -149,3 +149,44 @@ transparent
 
 z-index:-1;
 }
+#btnPinout{
+margin-top:25px;
+}
+
+#pinout{
+width:95%;
+margin:auto;
+margin-top:30px;
+
+display:grid;
+
+grid-template-columns:
+repeat(6,1fr);
+
+gap:15px;
+}
+
+.pin{
+
+width:50px;
+height:50px;
+
+border-radius:50%;
+
+background:#001818;
+
+border:2px solid #00ffff;
+
+color:#00ffff;
+
+display:flex;
+justify-content:center;
+align-items:center;
+
+font-weight:bold;
+
+margin:auto;
+
+box-shadow:
+0 0 10px #00ffff;
+}
