@@ -1,28 +1,28 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Conectores</title>
+<title>Connector Generator</title>
 
 <link rel="stylesheet" href="style.css">
+
 </head>
 
 <body>
 
-<div id="splash">
+<!-- SPLASH -->
 
-<h1 class="logo-text">VELOCÍMETROS DIGITALES CDMX</h1>
+<div id="splash">
 
 <h1>CONNECTOR GENERATOR</h1>
 
 <h2>VELOCÍMETROS DIGITALES CDMX</h2>
 
 <div class="loading-box">
-
 <div id="loading-bar"></div>
-
 </div>
 
 <p id="status">
@@ -31,14 +31,32 @@ Iniciando Sistema...
 
 </div>
 
+<!-- MENU PRINCIPAL -->
+
 <div id="menu">
 
-<img src="images/logo.png" class="watermark">
-
-<h1>CONNECTOR GENERATOR</h1>
+<h1 class="titulo">
+CONNECTOR GENERATOR
+</h1>
 
 <button onclick="document.getElementById('foto').click()">
 📷 ESCANEAR CONECTOR
+</button>
+
+<button>
+➕ NUEVO CONECTOR
+</button>
+
+<button>
+📚 BASE DE DATOS
+</button>
+
+<button>
+📄 EXPORTAR PDF
+</button>
+
+<button>
+⚙ CONFIGURACIÓN
 </button>
 
 <input
@@ -49,13 +67,11 @@ capture="environment"
 style="display:none"
 onchange="mostrarFoto(event)">
 
-<button>➕ NUEVO CONECTOR</button>
+<div id="preview-container">
 
-<button>📚 BASE DE DATOS</button>
+<img id="preview">
 
-<button>📄 EXPORTAR PDF</button>
-
-<button>⚙ CONFIGURACIÓN</button>
+</div>
 
 </div>
 
