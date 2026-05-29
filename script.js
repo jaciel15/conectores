@@ -66,19 +66,40 @@ lector.readAsDataURL(archivo);
 
 function generarPinout()
 {
-alert(“GENERAR PINOUT FUNCIONA”);
+let filas = parseInt(
+prompt("¿Cuántas filas tiene el conector?")
+);
+
+if(isNaN(filas) || filas<=0)
+{
+alert("Número de filas inválido");
+return;
 }
-let contenedor = document.getElementById("pinout");
+
+let pines = parseInt(
+prompt("¿Cuántos pines tiene el conector?")
+);
+
+if(isNaN(pines) || pines<=0)
+{
+alert("Número de pines inválido");
+return;
+}
+
+let columnas = Math.ceil(pines / filas);
+
+document.getElementById("pinout").style.gridTemplateColumns =
+"repeat(" + columnas + ",1fr)";
 
 let html = "";
 
-for(let i=1;i<=24;i++)
+for(let i=1;i<=pines;i++)
 {
 html +=
 '<div class="pin" onclick="editarPin(this,'+i+')">'+i+'</div>';
 }
 
-contenedor.innerHTML = html;
+document.getElementById("pinout").innerHTML = html;
 }
 
 
