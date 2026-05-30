@@ -138,3 +138,80 @@ pin.style.background="#8B4513";
 pin.style.color="#ffffff";
 }
 }
+/* NUEVO CONECTOR */
+
+function abrirNuevoConector()
+{
+let ventana =
+document.getElementById(“nuevoConector”);
+
+if(ventana.style.display==“block”)
+{
+ventana.style.display=“none”;
+}
+else
+{
+ventana.style.display=“block”;
+}
+}
+
+function guardarConector()
+{
+let tipo =
+document.getElementById(“tipo”).value;
+
+let marca =
+document.getElementById(“marca”).value;
+
+let modelo =
+document.getElementById(“modelo”).value;
+
+let version =
+document.getElementById(“version”).value;
+
+if(tipo==””)
+{
+alert(“Seleccione tipo”);
+return;
+}
+
+if(marca==””)
+{
+alert(“Ingrese marca”);
+return;
+}
+
+if(modelo==””)
+{
+alert(“Ingrese modelo”);
+return;
+}
+
+let datos = {
+
+tipo:tipo,
+
+marca:marca,
+
+modelo:modelo,
+
+version:version
+
+};
+
+localStorage.setItem(
+“ultimoConector”,
+JSON.stringify(datos)
+);
+
+alert(
+“Conector guardado correctamente”
+);
+}
+
+function siguientePaso()
+{
+alert(
+“Editor Visual de Pines\n\nPróxima fase del proyecto”
+);
+}
