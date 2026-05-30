@@ -143,7 +143,7 @@ pin.style.color="#ffffff";
 function abrirNuevoConector()
 {
 let ventana =
-document.getElementById(“nuevoConector”);
+document.getElementById("nuevoConector");
 
 if(ventana.style.display==“block”)
 {
