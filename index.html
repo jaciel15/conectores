@@ -43,7 +43,7 @@ CONNECTOR GENERATOR
 📷 ESCANEAR CONECTOR
 </button>
 
-<button>
+<button onclick="abrirNuevoConector()">
 ➕ NUEVO CONECTOR
 </button>
 
@@ -80,7 +80,64 @@ onchange="mostrarFoto(event)">
 </button>
 
 <div id="pinout"></div>
+<!-- NUEVO CONECTOR -->
 
+<div id="nuevoConector" style="display:none;">
+
+<h2>NUEVO CONECTOR</h2>
+
+<label>Tipo</label>
+
+<select id="tipo">
+<option value="">Seleccionar</option>
+<option>MOTO</option>
+<option>AUTO</option>
+</select>
+
+<label>Marca</label>
+
+<input
+type="text"
+id="marca"
+placeholder="YAMAHA">
+
+<label>Modelo</label>
+
+<input
+type="text"
+id="modelo"
+placeholder="MT03">
+
+<label>Versión</label>
+
+<input
+type="text"
+id="version"
+value="V1">
+
+<h3>Foto Cluster</h3>
+
+<input
+type="file"
+accept="image/*"
+capture="environment">
+
+<h3>Foto Conector</h3>
+
+<input
+type="file"
+accept="image/*"
+capture="environment">
+
+<button onclick="guardarConector()">
+💾 GUARDAR
+</button>
+
+<button onclick="siguientePaso()">
+➡ SIGUIENTE
+</button>
+
+</div>
 </div>
 
 <script src="script.js"></script>
