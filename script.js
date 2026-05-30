@@ -188,12 +188,10 @@ return;
 }
 
 let datos = {
-
-tipo:tipo,
-marca:marca,
-modelo:modelo,
-version:version
-
+tipo: tipo,
+marca: marca,
+modelo: modelo,
+version: version
 };
 
 localStorage.setItem(
@@ -206,7 +204,5 @@ alert(“Conector guardado correctamente”);
 
 function siguientePaso()
 {
-alert(
-“Próximo paso: Editor Visual de Pines”
-);
+alert(“Próximo paso: Editor Visual de Pines”);
 }
