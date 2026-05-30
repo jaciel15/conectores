@@ -19,11 +19,17 @@ let timer = setInterval(function(){
 
 percent += 5;
 
-bar.style.width = percent + "%";
+if(bar)
+{
+bar.style.width = percent + “%”;
+}
 
 if(i < mensajes.length)
 {
+if(status)
+{
 status.innerHTML = mensajes[i];
+}
 i++;
 }
 
