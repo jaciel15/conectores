@@ -190,11 +190,8 @@ return;
 let datos = {
 
 tipo:tipo,
-
 marca:marca,
-
 modelo:modelo,
-
 version:version
 
 };
@@ -204,14 +201,12 @@ localStorage.setItem(
 JSON.stringify(datos)
 );
 
-alert(
-“Conector guardado correctamente”
-);
+alert(“Conector guardado correctamente”);
 }
 
 function siguientePaso()
 {
 alert(
-“Editor Visual de Pines\n\nPróxima fase del proyecto”
+“Próximo paso: Editor Visual de Pines”
 );
 }
