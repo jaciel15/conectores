@@ -1,146 +1,228 @@
 <!DOCTYPE html>
-<html lang="es">
-
+<html lang="es" data-theme="light">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>Connector Generator</title>
-
-<link rel="stylesheet" href="style.css">
-
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Connector Generator — Velocímetros 12V</title>
+  <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
+  <div id="splash">
+    <h1>CONNECTOR GENERATOR</h1>
+    <h2>Velocímetros digitales 12V · CDMX</h2>
+    <div class="loading-box"><div id="loading-bar"></div></div>
+    <p id="status">Iniciando sistema...</p>
+  </div>
 
-<!-- SPLASH -->
+  <div class="topbar hidden" id="topbar">
+    <button type="button" class="icon-btn" id="btn-cerrar-vista" title="Cerrar / atrás">✕ Cerrar</button>
+    <div class="brand">CONNECTOR GENERATOR</div>
+    <button type="button" class="icon-btn" id="btn-tema" title="Cambiar tema">🌙 Oscuro</button>
+  </div>
 
-<div id="splash">
+  <div id="app">
+    <section id="vista-menu" class="vista visible">
+      <h1 class="titulo">CONNECTOR GENERATOR</h1>
+      <p class="subtitulo">Toma o sube la foto del conector. La IA detecta filas y pines. Guarda por Motocicletas → Marca → Modelo → Versión.</p>
+      <div class="acciones">
+        <button type="button" id="btn-escanear">📷 Escanear / subir foto</button>
+        <button type="button" id="btn-nuevo">➕ Nuevo conector 12V</button>
+        <button type="button" id="btn-db">📁 Base de datos</button>
+        <button type="button" id="btn-config">⚙ Configuración IA</button>
+      </div>
+    </section>
 
-<h1>CONNECTOR GENERATOR</h1>
+    <section id="vista-escanear" class="vista">
+      <h1 class="titulo">Escanear conector</h1>
+      <p class="subtitulo">La IA cuenta filas y pines. Luego puedes etiquetar señales 12V y guardar por marca/modelo.</p>
+      <div class="panel">
+        <input id="input-foto-scan" type="file" accept="image/*" capture="environment" class="hidden">
+        <button type="button" class="btn-principal" id="btn-abrir-camara">📷 Tomar o elegir foto</button>
+        <div class="preview-box" id="preview-scan"><div class="placeholder">Sin foto todavía</div></div>
+        <div id="ai-status-scan" class="ai-badge warn hidden">Listo para analizar</div>
+        <button type="button" id="btn-analizar-scan" disabled>⚡ Analizar con IA</button>
+        <div class="grid-2" style="margin-top:14px;">
+          <div class="campo"><label for="scan-filas">Filas</label><input id="scan-filas" type="number" min="1" max="20"></div>
+          <div class="campo"><label for="scan-pines">Pines</label><input id="scan-pines" type="number" min="1" max="120"></div>
+        </div>
+        <button type="button" class="btn-principal" id="btn-generar-desde-scan">Generar pinout</button>
+      </div>
+      <div id="resultado-scan" class="panel hidden">
+        <h2>Pinout detectado</h2>
+        <div id="pinout-scan" class="pinout-grid"></div>
+        <div class="leyenda" id="leyenda-scan"></div>
+        <div class="grid-2" style="margin-top:12px;">
+          <div class="campo">
+            <label for="scan-categoria">Categoría</label>
+            <select id="scan-categoria">
+              <option value="MOTOCICLETAS">Motocicletas</option>
+              <option value="AUTOS">Autos</option>
+            </select>
+          </div>
+          <div class="campo"><label for="scan-marca">Marca</label><input id="scan-marca" list="marcas-sugeridas" placeholder="Yamaha"></div>
+        </div>
+        <div class="grid-2">
+          <div class="campo"><label for="scan-modelo">Modelo</label><input id="scan-modelo" placeholder="XSR"></div>
+          <div class="campo"><label for="scan-version">Versión</label><input id="scan-version" placeholder="V1"></div>
+        </div>
+        <button type="button" id="btn-guardar-scan">💾 Guardar</button>
+      </div>
+    </section>
 
-<h2>VELOCÍMETROS DIGITALES CDMX</h2>
+    <section id="vista-nuevo" class="vista">
+      <h1 class="titulo">Nuevo conector 12V</h1>
+      <p class="subtitulo">Guarda por categoría, marca, modelo y versión (ej. XSR V1 y V2 en el mismo paquete).</p>
+      <div class="panel">
+        <h2>Datos</h2>
+        <div class="grid-2">
+          <div class="campo">
+            <label for="categoria">Categoría</label>
+            <select id="categoria">
+              <option value="MOTOCICLETAS">Motocicletas</option>
+              <option value="AUTOS">Autos</option>
+            </select>
+          </div>
+          <div class="campo">
+            <label for="voltaje">Sistema</label>
+            <select id="voltaje"><option value="12V">12V</option></select>
+          </div>
+        </div>
+        <div class="campo">
+          <label for="marca">Marca</label>
+          <input id="marca" list="marcas-sugeridas" placeholder="Yamaha">
+        </div>
+        <div class="grid-2">
+          <div class="campo"><label for="modelo">Modelo</label><input id="modelo" placeholder="XSR / MT-03"></div>
+          <div class="campo"><label for="version">Versión</label><input id="version" value="V1" placeholder="V1 / V2 / 2020"></div>
+        </div>
+        <datalist id="marcas-sugeridas">
+          <option value="Yamaha"></option>
+          <option value="Honda"></option>
+          <option value="Suzuki"></option>
+          <option value="Kawasaki"></option>
+          <option value="Bajaj"></option>
+          <option value="Italika"></option>
+          <option value="BMW"></option>
+          <option value="Ducati"></option>
+          <option value="Harley-Davidson"></option>
+          <option value="Toyota"></option>
+          <option value="Nissan"></option>
+          <option value="Volkswagen"></option>
+          <option value="Chevrolet"></option>
+          <option value="Ford"></option>
+        </datalist>
 
-<div class="loading-box">
-<div id="loading-bar"></div>
-</div>
+        <div class="campo">
+          <label for="foto-cluster">Foto cluster / velocímetro</label>
+          <input id="foto-cluster" type="file" accept="image/*" capture="environment">
+          <div class="preview-box" id="preview-cluster"><div class="placeholder">Foto cluster</div></div>
+        </div>
+        <div class="campo">
+          <label for="foto-conector">Foto conector</label>
+          <input id="foto-conector" type="file" accept="image/*" capture="environment">
+          <div class="preview-box" id="preview-conector"><div class="placeholder">Foto conector</div></div>
+          <small>La IA usa esta foto para contar filas y pines.</small>
+        </div>
+        <div id="ai-status-nuevo" class="ai-badge warn hidden">Sin análisis</div>
+        <div class="grid-2">
+          <div class="campo"><label for="nuevo-filas">Filas</label><input id="nuevo-filas" type="number" min="1" max="20"></div>
+          <div class="campo"><label for="nuevo-pines">Pines</label><input id="nuevo-pines" type="number" min="1" max="120"></div>
+        </div>
+        <div class="acciones">
+          <button type="button" id="btn-ia-nuevo">⚡ Detectar con IA</button>
+          <button type="button" class="btn-principal" id="btn-generar-nuevo">Generar pinout 12V</button>
+        </div>
+      </div>
+      <div id="resultado-nuevo" class="panel hidden">
+        <h2>Editor de pines 12V</h2>
+        <p class="subtitulo" style="margin-bottom:8px;">Toca un pin para elegir señal y color.</p>
+        <div id="pinout-nuevo" class="pinout-grid"></div>
+        <div class="leyenda" id="leyenda-nuevo"></div>
+        <div class="campo" style="margin-top:12px;">
+          <label for="notas">Notas</label>
+          <textarea id="notas" placeholder="Vista desde cables / macho / hembra"></textarea>
+        </div>
+        <button type="button" id="btn-guardar-nuevo">💾 Guardar conector</button>
+      </div>
+    </section>
 
-<p id="status">
-Iniciando Sistema...
-</p>
+    <section id="vista-db" class="vista">
+      <h1 class="titulo">Base de datos</h1>
+      <p class="subtitulo">Navega: Motocicletas → Marca → Modelo → Versiones. Puedes editar cualquier conector.</p>
+      <div class="breadcrumbs" id="db-crumbs"></div>
+      <div class="fila-botones" style="margin-bottom:12px;">
+        <button type="button" class="btn-secundario" id="btn-db-atras">⬅ Atrás</button>
+        <a class="btn btn-secundario" href="motos/yamaha/index.html">Catálogo Yamaha</a>
+      </div>
+      <div id="lista-db" class="lista"></div>
+    </section>
 
-</div>
+    <section id="vista-detalle" class="vista">
+      <h1 class="titulo" id="detalle-titulo">Conector</h1>
+      <div class="panel">
+        <div class="preview-box" id="detalle-foto"><div class="placeholder">Sin foto</div></div>
+        <p id="detalle-meta" class="subtitulo" style="margin-top:12px;"></p>
+        <div id="pinout-detalle" class="pinout-grid"></div>
+        <div class="leyenda" id="leyenda-detalle"></div>
+        <div class="acciones" style="margin-top:14px;">
+          <button type="button" class="btn-principal" id="btn-editar">✏️ Editar conector</button>
+          <button type="button" class="btn-secundario" id="btn-detalle-atras">⬅ Atrás</button>
+          <button type="button" class="btn-peligro" id="btn-detalle-borrar">🗑 Borrar</button>
+        </div>
+      </div>
+    </section>
 
-<!-- MENU PRINCIPAL -->
+    <section id="vista-config" class="vista">
+      <h1 class="titulo">Configuración</h1>
+      <p class="subtitulo">Tema, API de IA y preferencias. Sin API key puedes generar pinouts a mano.</p>
+      <div class="panel">
+        <div class="campo">
+          <label>Tema visual</label>
+          <div class="fila-botones">
+            <button type="button" class="btn-secundario" id="btn-tema-claro">☀ Claro</button>
+            <button type="button" class="btn-secundario" id="btn-tema-oscuro">🌙 Oscuro</button>
+          </div>
+        </div>
+        <div class="campo">
+          <label for="api-key">Gemini API Key</label>
+          <input id="api-key" type="password" placeholder="AIza..." autocomplete="off">
+          <small>Gratis en <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Google AI Studio</a>. Solo se guarda en este dispositivo.</small>
+        </div>
+        <div class="campo">
+          <label for="modelo-ia">Modelo</label>
+          <select id="modelo-ia">
+            <option value="gemini-2.0-flash">gemini-2.0-flash</option>
+            <option value="gemini-1.5-flash">gemini-1.5-flash</option>
+            <option value="gemini-1.5-pro">gemini-1.5-pro</option>
+          </select>
+        </div>
+        <div class="acciones">
+          <button type="button" class="btn-principal" id="btn-guardar-config">Guardar</button>
+          <button type="button" class="btn-secundario" id="btn-probar-ia">Probar IA</button>
+        </div>
+      </div>
+    </section>
+  </div>
 
-<div id="menu">
+  <div class="modal" id="modal-pin" role="dialog" aria-modal="true">
+    <div class="modal-contenido">
+      <h3 id="modal-pin-titulo">PIN</h3>
+      <div class="campo"><label>Señal 12V</label></div>
+      <div class="senales" id="lista-senales"></div>
+      <div class="campo"><label>Color del pin</label></div>
+      <div class="colores" id="lista-colores"></div>
+      <div class="campo">
+        <label for="pin-custom">Etiqueta</label>
+        <input id="pin-custom" type="text" maxlength="16" placeholder="Ej. CAN-H">
+      </div>
+      <div class="fila-botones">
+        <button type="button" class="btn-secundario" id="btn-cerrar-modal">Cerrar</button>
+        <button type="button" class="btn-principal" id="btn-aplicar-pin">Aplicar</button>
+      </div>
+    </div>
+  </div>
 
-<h1 class="titulo">
-CONNECTOR GENERATOR
-</h1>
-
-<button onclick="document.getElementById('foto').click()">
-📷 ESCANEAR CONECTOR
-</button>
-
-<button onclick="abrirNuevoConector()">
-➕ NUEVO CONECTOR
-</button>
-
-<a href="database.html">
-<button>
-📁 BASE DE DATOS
-</button>
-</a>
-
-<button>
-📄 EXPORTAR PDF
-</button>
-
-<button>
-⚙ CONFIGURACIÓN
-</button>
-
-<input
-id="foto"
-type="file"
-accept="image/*"
-capture="environment"
-style="display:none"
-onchange="mostrarFoto(event)">
-
-<div id="preview-container">
-
-<img id="preview">
-
-</div>
-
-<button id="btnPinout" onclick="generarPinout()">
-⚡ GENERAR PINOUT
-</button>
-
-<div id="pinout"></div>
-<!-- NUEVO CONECTOR -->
-
-<div id="nuevoConector" style="display:none;">
-
-<h2>NUEVO CONECTOR</h2>
-
-<label>Tipo</label>
-
-<select id="tipo">
-<option value="">Seleccionar</option>
-<option>MOTO</option>
-<option>AUTO</option>
-</select>
-
-<label>Marca</label>
-
-<input
-type="text"
-id="marca"
-placeholder="YAMAHA">
-
-<label>Modelo</label>
-
-<input
-type="text"
-id="modelo"
-placeholder="MT03">
-
-<label>Versión</label>
-
-<input
-type="text"
-id="version"
-value="V1">
-
-<h3>Foto Cluster</h3>
-
-<input
-type="file"
-accept="image/*"
-capture="environment">
-
-<h3>Foto Conector</h3>
-
-<input
-type="file"
-accept="image/*"
-capture="environment">
-
-<button onclick="guardarConector()">
-💾 GUARDAR
-</button>
-
-<button onclick="siguientePaso()">
-➡ SIGUIENTE
-</button>
-
-</div>
-</div>
-
-<script src="script.js"></script>
-
+  <div class="toast" id="toast"></div>
+  <script src="script.js"></script>
 </body>
 </html>

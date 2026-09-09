@@ -1,20 +1,40 @@
 <!DOCTYPE html>
-<html>
+<html lang="es" data-theme="light">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MT-03</title>
+<link rel="stylesheet" href="../../../catalog.css">
 </head>
+<body>
+  <div class="top">
+    <a class="icon-btn" href="../index.html">⬅ Atrás</a>
+    <button class="icon-btn" type="button" id="btn-tema">🌙 Oscuro</button>
+    <a class="icon-btn" href="../../../index.html">✕ Cerrar</a>
+  </div>
 
-<body style="background:black;color:white;font-family:Arial;text-align:center;">
+  <p class="muted">Motocicletas · Yamaha · MT-03</p>
+  <h1>MT-03</h1>
+  <p class="muted">Página de catálogo. Guarda conectores V1/V2 desde la app principal en Base de datos.</p>
 
-<h1>🏍️ MT-03</h1>
+  <a class="boton" href="../../../index.html#nuevo">➕ Crear conector 12V</a>
+  <a class="boton" href="../../../index.html#db">📁 Ver base de datos</a>
+  <a class="boton" href="../index.html">⬅ Volver a Yamaha</a>
 
-<p>Página en construcción</p>
-
-<a href="../index.html">
-⬅️ Regresar a Yamaha
-</a>
-
+  <script>
+    (function () {
+      const key = "cg_theme";
+      const apply = (t) => {
+        document.documentElement.setAttribute("data-theme", t);
+        localStorage.setItem(key, t);
+        document.getElementById("btn-tema").textContent = t === "dark" ? "☀ Claro" : "🌙 Oscuro";
+      };
+      apply(localStorage.getItem(key) || "light");
+      document.getElementById("btn-tema").onclick = () => {
+        const cur = document.documentElement.getAttribute("data-theme");
+        apply(cur === "dark" ? "light" : "dark");
+      };
+    })();
+  </script>
 </body>
 </html>
