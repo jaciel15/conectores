@@ -765,6 +765,8 @@ Reglas:
     $("btn-tema").addEventListener("click", toggleTheme);
     $("btn-tema-claro").addEventListener("click", () => applyTheme("light"));
     $("btn-tema-oscuro").addEventListener("click", () => applyTheme("dark"));
+    $("btn-tema-menu").addEventListener("click", () => applyTheme("dark"));
+    $("btn-tema-menu-claro").addEventListener("click", () => applyTheme("light"));
     $("btn-cerrar-vista").addEventListener("click", cerrarVista);
 
     $("btn-escanear").addEventListener("click", () => showVista("escanear"));
