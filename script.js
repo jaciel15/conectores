@@ -460,6 +460,8 @@ Reglas:
         [...$("lista-colores").children].forEach((x) => {
           x.classList.toggle("selected", x.dataset.color.toLowerCase() === s.color.toLowerCase());
         });
+        // Aplica al instante al elegir la señal (sin botón Aplicar)
+        applyPinModal();
       });
       list.appendChild(b);
     });
@@ -477,6 +479,8 @@ Reglas:
         state.selectedColor = c;
         [...colors.children].forEach((x) => x.classList.remove("selected"));
         b.classList.add("selected");
+        // Si ya hay señal, aplica color al instante
+        if (state.selectedSignal) applyPinModal();
       });
       colors.appendChild(b);
     });
@@ -641,12 +645,19 @@ Reglas:
       const item = buildConnectorPayload(from);
       upsertConnector(item);
       state.editingId = null;
+      state.lastSavedId = item.id;
       toast(`Guardado: ${item.marca} ${item.modelo} ${item.version}`);
       state.dbPath = {
         categoria: item.categoria,
         marca: item.marca,
         modelo: item.modelo,
       };
+      // Intentar publicar online si la nube está configurada
+      publishToCloud(item)
+        .then(() => toast("También publicado en comunidad online"))
+        .catch(() => {
+          /* silencioso si no hay nube */
+        });
       showVista("db");
       renderDB();
     } catch (err) {
@@ -867,6 +878,185 @@ Reglas:
     const cfg = loadConfig();
     $("api-key").value = cfg.apiKey || "";
     $("modelo-ia").value = cfg.model || "gemini-2.0-flash";
+    if ($("autor-nombre")) $("autor-nombre").value = cfg.author || "";
+    if ($("firebase-config")) {
+      $("firebase-config").value = cfg.firebaseConfig
+        ? JSON.stringify(cfg.firebaseConfig, null, 2)
+        : "";
+    }
+  }
+
+  /* ===== NUBE / COMUNIDAD (Firebase) ===== */
+  let cloud = { ready: false, db: null, uid: null, error: "" };
+
+  function getFirebaseConfig() {
+    const cfg = loadConfig();
+    return cfg.firebaseConfig || null;
+  }
+
+  async function initCloud(force = false) {
+    const fbCfg = getFirebaseConfig();
+    if (!fbCfg) {
+      cloud = { ready: false, db: null, uid: null, error: "Sin config Firebase" };
+      return cloud;
+    }
+    if (cloud.ready && !force) return cloud;
+    try {
+      if (!window.firebase) throw new Error("SDK Firebase no cargó");
+      if (!firebase.apps.length) firebase.initializeApp(fbCfg);
+      const auth = firebase.auth();
+      if (!auth.currentUser) await auth.signInAnonymously();
+      cloud = {
+        ready: true,
+        db: firebase.firestore(),
+        uid: auth.currentUser.uid,
+        error: "",
+      };
+    } catch (err) {
+      cloud = { ready: false, db: null, uid: null, error: err.message || "Error nube" };
+    }
+    return cloud;
+  }
+
+  function slimConnectorForCloud(item) {
+    // Compactar fotos para caber en Firestore
+    return {
+      id: item.id,
+      categoria: item.categoria,
+      marca: item.marca,
+      modelo: item.modelo,
+      version: item.version,
+      modulo: item.modulo || "DASH",
+      forma: item.forma || "circle",
+      voltaje: item.voltaje || "12V",
+      filas: item.filas,
+      pines: item.pines,
+      columns: item.columns,
+      pins: item.pins,
+      fotoConector: item.fotoConector || null,
+      fotoCluster: item.fotoCluster || null,
+      notas: item.notas || "",
+      slug: item.slug || "",
+      author: loadConfig().author || "Anónimo",
+      uid: cloud.uid || "",
+      updatedAt: item.updatedAt || Date.now(),
+      publishedAt: Date.now(),
+    };
+  }
+
+  async function publishToCloud(item) {
+    const c = await initCloud();
+    if (!c.ready) throw new Error("Configura Firebase en Configuración para publicar online");
+    const payload = slimConnectorForCloud(item);
+    // Si las fotos son muy grandes, comprimir más
+    if (payload.fotoConector && payload.fotoConector.length > 350000) {
+      payload.fotoConector = await compressImage(payload.fotoConector, 900, 0.55);
+    }
+    if (payload.fotoCluster && payload.fotoCluster.length > 350000) {
+      payload.fotoCluster = await compressImage(payload.fotoCluster, 900, 0.55);
+    }
+    await c.db.collection("conectores").doc(payload.id).set(payload, { merge: true });
+    return payload;
+  }
+
+  async function fetchCommunity() {
+    const c = await initCloud();
+    if (!c.ready) throw new Error(c.error || "Nube no configurada");
+    const snap = await c.db.collection("conectores").orderBy("publishedAt", "desc").limit(80).get();
+    return snap.docs.map((d) => d.data());
+  }
+
+  function setCloudBadge(type, text) {
+    const el = $("cloud-status");
+    if (!el) return;
+    el.className = "ai-badge " + type;
+    el.innerHTML = text;
+  }
+
+  async function renderComunidad() {
+    const box = $("lista-comunidad");
+    setCloudBadge("warn", `<span class="spinner"></span> Cargando comunidad…`);
+    box.innerHTML = "";
+    try {
+      const c = await initCloud();
+      if (!c.ready) {
+        setCloudBadge("error", "Nube no activa. Ve a Configuración y pega tu Firebase JSON.");
+        box.innerHTML = `<div class="empty">Para que todos tus clientes vean/suban conectores:<br>
+          1. Configuración → Comunidad online<br>
+          2. Crea proyecto Firebase gratis<br>
+          3. Pega la config y guarda<br>
+          Luego vuelve aquí.</div>`;
+        return;
+      }
+      const list = await fetchCommunity();
+      setCloudBadge("ok", `Online · ${list.length} conectores públicos`);
+      if (!list.length) {
+        box.innerHTML = `<div class="empty">Aún no hay publicaciones. Crea un conector y publícalo.</div>`;
+        return;
+      }
+      box.innerHTML = list.map((item) => {
+        const img = item.fotoConector || item.fotoCluster || "";
+        return `<div class="card-item" data-cloud-id="${escapeAttr(item.id)}">
+          ${img ? `<img src="${img}" alt="">` : `<div class="preview-box" style="min-height:78px;width:78px;"><div class="placeholder">Sin foto</div></div>`}
+          <div>
+            <h3>${escapeHtml(item.marca)} ${escapeHtml(item.modelo)} · ${escapeHtml(item.version || "V1")}</h3>
+            <p>${escapeHtml(item.modulo || "DASH")} · ${item.pines || 0} pines · por ${escapeHtml(item.author || "Anónimo")}</p>
+          </div>
+        </div>`;
+      }).join("");
+      box.querySelectorAll("[data-cloud-id]").forEach((el) => {
+        el.addEventListener("click", () => {
+          const item = list.find((x) => x.id === el.dataset.cloudId);
+          if (!item) return;
+          // Cache local and open detail
+          upsertConnector({ ...item, updatedAt: item.updatedAt || Date.now() });
+          openDetalle(item.id);
+        });
+      });
+    } catch (err) {
+      setCloudBadge("error", err.message || "Error al cargar");
+      box.innerHTML = `<div class="empty">${escapeHtml(err.message || "Error")}</div>`;
+    }
+  }
+
+  async function saveCloudConfig() {
+    let parsed = null;
+    const raw = ($("firebase-config").value || "").trim();
+    if (raw) {
+      try {
+        parsed = JSON.parse(raw);
+      } catch {
+        toast("JSON de Firebase inválido");
+        return;
+      }
+      if (!parsed.apiKey || !parsed.projectId) {
+        toast("Falta apiKey o projectId en la config");
+        return;
+      }
+    }
+    const cfg = loadConfig();
+    cfg.firebaseConfig = parsed;
+    cfg.author = ($("autor-nombre").value || "").trim() || "Anónimo";
+    saveConfig(cfg);
+    cloud.ready = false;
+    const c = await initCloud(true);
+    if (c.ready) toast("Nube conectada ✔");
+    else toast(c.error || "No se pudo conectar la nube");
+  }
+
+  async function testCloud() {
+    toast("Probando nube…");
+    const c = await initCloud(true);
+    if (!c.ready) {
+      toast(c.error || "Nube no conectada");
+      return;
+    }
+    try {
+      await c.db.collection("conectores").limit(1).get();
+      toast("Nube OK · Firestore responde");
+    } catch (err) {
+      toast("Firestore error: " + (err.message || "revisa reglas"));
+    }
   }
 
   async function testAI() {
@@ -934,6 +1124,10 @@ Reglas:
       state.editingId = null;
       showVista("nuevo");
     });
+    $("btn-comunidad").addEventListener("click", () => {
+      showVista("comunidad");
+      renderComunidad();
+    });
     $("btn-db").addEventListener("click", () => {
       showVista("db");
       renderDB();
@@ -943,6 +1137,9 @@ Reglas:
       showVista("config");
     });
 
+    $("btn-comunidad-atras").addEventListener("click", () => showVista("menu"));
+    $("btn-comunidad-refresh").addEventListener("click", () => renderComunidad());
+
     $("btn-db-atras").addEventListener("click", dbAtras);
     $("btn-detalle-atras").addEventListener("click", () => {
       showVista("db");
@@ -951,10 +1148,10 @@ Reglas:
     $("btn-editar").addEventListener("click", editCurrent);
     $("btn-detalle-borrar").addEventListener("click", deleteCurrent);
 
-    $("btn-abrir-camara").addEventListener("click", () => $("input-foto-scan").click());
-    $("input-foto-scan").addEventListener("change", async (e) => {
+    async function handleFotoScan(file) {
+      if (!file) return;
       try {
-        const raw = await readFileAsDataURL(e.target.files[0]);
+        const raw = await readFileAsDataURL(file);
         state.scanDataUrl = await compressImage(raw);
         setPreview("preview-scan", state.scanDataUrl, "Sin foto");
         $("btn-analizar-scan").disabled = !state.scanDataUrl;
@@ -962,33 +1159,52 @@ Reglas:
       } catch (err) {
         toast(err.message);
       }
-    });
+    }
+    $("btn-cam-scan").addEventListener("click", () => $("input-foto-scan-cam").click());
+    $("btn-gal-scan").addEventListener("click", () => $("input-foto-scan-gal").click());
+    $("input-foto-scan-cam").addEventListener("change", (e) => handleFotoScan(e.target.files[0]));
+    $("input-foto-scan-gal").addEventListener("change", (e) => handleFotoScan(e.target.files[0]));
+
     $("btn-analizar-scan").addEventListener("click", () => runAI("scan"));
     $("btn-generar-desde-scan").addEventListener("click", generateFromScan);
     $("btn-guardar-scan").addEventListener("click", () => saveFrom("scan"));
 
-    $("foto-cluster").addEventListener("change", async (e) => {
+    async function handleCluster(file) {
+      if (!file) return;
       try {
-        const raw = await readFileAsDataURL(e.target.files[0]);
+        const raw = await readFileAsDataURL(file);
         state.clusterDataUrl = await compressImage(raw);
         setPreview("preview-cluster", state.clusterDataUrl, "Foto cluster");
       } catch (err) {
         toast(err.message);
       }
-    });
-    $("foto-conector").addEventListener("change", async (e) => {
+    }
+    async function handleConector(file) {
+      if (!file) return;
       try {
-        const raw = await readFileAsDataURL(e.target.files[0]);
+        const raw = await readFileAsDataURL(file);
         state.conectorDataUrl = await compressImage(raw);
         setPreview("preview-conector", state.conectorDataUrl, "Foto conector");
         setAiBadge("ai-status-nuevo", "warn", "Foto lista para detectar filas/pines");
       } catch (err) {
         toast(err.message);
       }
-    });
+    }
+    $("btn-cam-cluster").addEventListener("click", () => $("foto-cluster-cam").click());
+    $("btn-gal-cluster").addEventListener("click", () => $("foto-cluster-gal").click());
+    $("btn-cam-conector").addEventListener("click", () => $("foto-conector-cam").click());
+    $("btn-gal-conector").addEventListener("click", () => $("foto-conector-gal").click());
+    $("foto-cluster-cam").addEventListener("change", (e) => handleCluster(e.target.files[0]));
+    $("foto-cluster-gal").addEventListener("change", (e) => handleCluster(e.target.files[0]));
+    $("foto-conector-cam").addEventListener("change", (e) => handleConector(e.target.files[0]));
+    $("foto-conector-gal").addEventListener("change", (e) => handleConector(e.target.files[0]));
+
     $("btn-ia-nuevo").addEventListener("click", () => runAI("nuevo"));
     $("btn-generar-nuevo").addEventListener("click", generateNuevo);
     $("btn-guardar-nuevo").addEventListener("click", () => saveFrom("nuevo"));
+
+    $("btn-guardar-cloud").addEventListener("click", () => saveCloudConfig());
+    $("btn-probar-cloud").addEventListener("click", () => testCloud());
 
     ["forma-pin", "modulo-tipo", "marca", "modelo", "version", "notas", "nuevo-filas"].forEach((id) => {
       const el = $(id);
@@ -1016,11 +1232,11 @@ Reglas:
     });
 
     $("btn-guardar-config").addEventListener("click", () => {
-      saveConfig({
-        apiKey: $("api-key").value.trim(),
-        model: $("modelo-ia").value,
-      });
-      toast("Configuración guardada");
+      const cfg = loadConfig();
+      cfg.apiKey = $("api-key").value.trim();
+      cfg.model = $("modelo-ia").value;
+      saveConfig(cfg);
+      toast("Configuración IA guardada");
     });
     $("btn-probar-ia").addEventListener("click", testAI);
 

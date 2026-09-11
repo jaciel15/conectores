@@ -31,8 +31,9 @@
       <div class="acciones">
         <button type="button" id="btn-escanear">📷 Escanear / subir foto</button>
         <button type="button" id="btn-nuevo">➕ Nuevo conector 12V</button>
-        <button type="button" id="btn-db">📁 Base de datos</button>
-        <button type="button" id="btn-config">⚙ Configuración IA</button>
+        <button type="button" id="btn-comunidad">🌐 Comunidad online</button>
+        <button type="button" id="btn-db">📁 Mis conectores (local)</button>
+        <button type="button" id="btn-config">⚙ Configuración</button>
       </div>
     </section>
 
@@ -40,8 +41,12 @@
       <h1 class="titulo">Escanear conector</h1>
       <p class="subtitulo">La IA cuenta filas y pines. Luego puedes etiquetar señales 12V y guardar por marca/modelo.</p>
       <div class="panel">
-        <input id="input-foto-scan" type="file" accept="image/*" capture="environment" class="hidden">
-        <button type="button" class="btn-principal" id="btn-abrir-camara">📷 Tomar o elegir foto</button>
+        <input id="input-foto-scan-cam" type="file" accept="image/*" capture="environment" class="hidden">
+        <input id="input-foto-scan-gal" type="file" accept="image/*" class="hidden">
+        <div class="fila-botones">
+          <button type="button" class="btn-principal" id="btn-cam-scan">📷 Cámara</button>
+          <button type="button" class="btn-secundario" id="btn-gal-scan">🖼 Galería</button>
+        </div>
         <div class="preview-box" id="preview-scan"><div class="placeholder">Sin foto todavía</div></div>
         <div id="ai-status-scan" class="ai-badge warn hidden">Listo para analizar</div>
         <button type="button" id="btn-analizar-scan" disabled>⚡ Analizar con IA</button>
@@ -134,13 +139,23 @@
         </datalist>
 
         <div class="campo">
-          <label for="foto-cluster">Foto cluster / velocímetro</label>
-          <input id="foto-cluster" type="file" accept="image/*" capture="environment">
+          <label>Foto cluster / velocímetro</label>
+          <div class="fila-botones">
+            <button type="button" class="btn-secundario" id="btn-cam-cluster">📷 Cámara</button>
+            <button type="button" class="btn-secundario" id="btn-gal-cluster">🖼 Galería</button>
+          </div>
+          <input id="foto-cluster-cam" type="file" accept="image/*" capture="environment" class="hidden">
+          <input id="foto-cluster-gal" type="file" accept="image/*" class="hidden">
           <div class="preview-box" id="preview-cluster"><div class="placeholder">Foto cluster</div></div>
         </div>
         <div class="campo">
-          <label for="foto-conector">Foto conector</label>
-          <input id="foto-conector" type="file" accept="image/*" capture="environment">
+          <label>Foto conector</label>
+          <div class="fila-botones">
+            <button type="button" class="btn-secundario" id="btn-cam-conector">📷 Cámara</button>
+            <button type="button" class="btn-secundario" id="btn-gal-conector">🖼 Galería</button>
+          </div>
+          <input id="foto-conector-cam" type="file" accept="image/*" capture="environment" class="hidden">
+          <input id="foto-conector-gal" type="file" accept="image/*" class="hidden">
           <div class="preview-box" id="preview-conector"><div class="placeholder">Foto conector</div></div>
           <small>La IA usa esta foto para contar filas y pines.</small>
         </div>
@@ -185,9 +200,20 @@
       </div>
     </section>
 
+    <section id="vista-comunidad" class="vista">
+      <h1 class="titulo">Comunidad online</h1>
+      <p class="subtitulo">Conectores y pineados publicados por todos tus clientes. Se ven en cualquier dispositivo.</p>
+      <div id="cloud-status" class="ai-badge warn">Comprobando nube…</div>
+      <div class="fila-botones" style="margin:12px 0;">
+        <button type="button" class="btn-secundario" id="btn-comunidad-atras">⬅ Menú</button>
+        <button type="button" class="btn-secundario" id="btn-comunidad-refresh">↻ Actualizar</button>
+      </div>
+      <div id="lista-comunidad" class="lista"></div>
+    </section>
+
     <section id="vista-db" class="vista">
-      <h1 class="titulo">Base de datos</h1>
-      <p class="subtitulo">Navega: Motocicletas → Marca → Modelo → Versiones. Puedes editar cualquier conector.</p>
+      <h1 class="titulo">Mis conectores</h1>
+      <p class="subtitulo">Guardados en este dispositivo. Puedes publicarlos a la comunidad online.</p>
       <div class="breadcrumbs" id="db-crumbs"></div>
       <div class="fila-botones" style="margin-bottom:12px;">
         <button type="button" class="btn-secundario" id="btn-db-atras">⬅ Atrás</button>
@@ -212,8 +238,31 @@
 
     <section id="vista-config" class="vista">
       <h1 class="titulo">Configuración</h1>
-      <p class="subtitulo">Tema, API de IA y preferencias. Sin API key puedes generar pinouts a mano.</p>
+      <p class="subtitulo">Activa la nube para que todos tus clientes vean y suban conectores.</p>
       <div class="panel">
+        <h2>Comunidad online (Firebase gratis)</h2>
+        <div class="campo">
+          <label for="autor-nombre">Tu nombre / taller</label>
+          <input id="autor-nombre" type="text" placeholder="Ej. Velocímetros CDMX" maxlength="40">
+        </div>
+        <div class="campo">
+          <label for="firebase-config">Config Firebase (JSON)</label>
+          <textarea id="firebase-config" rows="7" placeholder='{"apiKey":"...","authDomain":"...","projectId":"...","storageBucket":"...","appId":"..."}'></textarea>
+          <small>
+            1) Entra a <a href="https://console.firebase.google.com/" target="_blank" rel="noopener">Firebase Console</a> (gratis)<br>
+            2) Crea proyecto → Authentication → habilita <strong>Anónimo</strong><br>
+            3) Firestore Database → crear (modo prueba)<br>
+            4) Project settings → Tus apps → Web → copiar la config aquí<br>
+            5) En Firestore → Reglas, pega las reglas del README y Publicar
+          </small>
+        </div>
+        <div class="acciones">
+          <button type="button" class="btn-principal" id="btn-guardar-cloud">Guardar y conectar nube</button>
+          <button type="button" class="btn-secundario" id="btn-probar-cloud">Probar nube</button>
+        </div>
+      </div>
+      <div class="panel">
+        <h2>IA Gemini (opcional)</h2>
         <div class="campo">
           <label>Tema visual</label>
           <div class="fila-botones">
@@ -224,7 +273,7 @@
         <div class="campo">
           <label for="api-key">Gemini API Key</label>
           <input id="api-key" type="password" placeholder="AIza..." autocomplete="off">
-          <small>Gratis en <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Google AI Studio</a>. Solo se guarda en este dispositivo.</small>
+          <small>Gratis en <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Google AI Studio</a>.</small>
         </div>
         <div class="campo">
           <label for="modelo-ia">Modelo</label>
@@ -235,7 +284,7 @@
           </select>
         </div>
         <div class="acciones">
-          <button type="button" class="btn-principal" id="btn-guardar-config">Guardar</button>
+          <button type="button" class="btn-principal" id="btn-guardar-config">Guardar IA</button>
           <button type="button" class="btn-secundario" id="btn-probar-ia">Probar IA</button>
         </div>
       </div>
@@ -245,10 +294,10 @@
   <div class="modal" id="modal-pin" role="dialog" aria-modal="true">
     <div class="modal-contenido">
       <h3 id="modal-pin-titulo">PIN</h3>
-      <p class="subtitulo" style="margin-bottom:10px;text-align:center;">Elige la señal (12V, GND, CAN-H…) y se pinta ese pin.</p>
+      <p class="subtitulo" style="margin-bottom:10px;text-align:center;">Toca <strong>12V</strong>, <strong>GND</strong> o <strong>CAN-H</strong> y se aplica solo al pin (sin Aplicar).</p>
       <div class="campo"><label>Señal del pin</label></div>
       <div class="senales" id="lista-senales"></div>
-      <div class="campo"><label>Color del pin</label></div>
+      <div class="campo"><label>Color (opcional)</label></div>
       <div class="colores" id="lista-colores"></div>
       <div class="campo">
         <label for="pin-custom">Etiqueta visible</label>
@@ -256,12 +305,15 @@
       </div>
       <div class="fila-botones">
         <button type="button" class="btn-secundario" id="btn-cerrar-modal">Cerrar</button>
-        <button type="button" class="btn-principal" id="btn-aplicar-pin">Aplicar</button>
+        <button type="button" class="btn-principal" id="btn-aplicar-pin">Aplicar etiqueta</button>
       </div>
     </div>
   </div>
 
   <div class="toast" id="toast"></div>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
