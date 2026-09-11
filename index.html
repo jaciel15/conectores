@@ -53,9 +53,9 @@
           <div class="campo">
             <label for="scan-forma-pin">Forma del pin</label>
             <select id="scan-forma-pin">
-              <option value="rect" selected>Rectangular (real)</option>
+              <option value="circle" selected>Circular (real)</option>
+              <option value="rect">Rectangular</option>
               <option value="square">Cuadrado</option>
-              <option value="circle">Circular</option>
             </select>
           </div>
           <div class="campo">
@@ -153,9 +153,9 @@
           <div class="campo">
             <label for="forma-pin">Forma del pin</label>
             <select id="forma-pin">
-              <option value="rect" selected>Rectangular (real)</option>
+              <option value="circle" selected>Circular (real)</option>
+              <option value="rect">Rectangular</option>
               <option value="square">Cuadrado</option>
-              <option value="circle">Circular</option>
             </select>
           </div>
           <div class="campo">
@@ -245,13 +245,14 @@
   <div class="modal" id="modal-pin" role="dialog" aria-modal="true">
     <div class="modal-contenido">
       <h3 id="modal-pin-titulo">PIN</h3>
-      <div class="campo"><label>Señal 12V</label></div>
+      <p class="subtitulo" style="margin-bottom:10px;text-align:center;">Elige la señal (12V, GND, CAN-H…) y se pinta ese pin.</p>
+      <div class="campo"><label>Señal del pin</label></div>
       <div class="senales" id="lista-senales"></div>
       <div class="campo"><label>Color del pin</label></div>
       <div class="colores" id="lista-colores"></div>
       <div class="campo">
-        <label for="pin-custom">Etiqueta</label>
-        <input id="pin-custom" type="text" maxlength="16" placeholder="Ej. CAN-H">
+        <label for="pin-custom">Etiqueta visible</label>
+        <input id="pin-custom" type="text" maxlength="16" placeholder="Ej. 12V / GND / CAN-H">
       </div>
       <div class="fila-botones">
         <button type="button" class="btn-secundario" id="btn-cerrar-modal">Cerrar</button>

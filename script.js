@@ -6,8 +6,10 @@
   const THEME_KEY = "cg_theme";
 
   const SENALES = [
-    { id: "BATT", label: "+12V / BATT", color: "#e53935", text: "#fff" },
+    { id: "12V", label: "12V / BATT", color: "#e53935", text: "#fff" },
     { id: "GND", label: "GND / Tierra", color: "#111111", text: "#fff" },
+    { id: "CAN_H", label: "CAN-H", color: "#5e35b1", text: "#fff" },
+    { id: "CAN_L", label: "CAN-L", color: "#3949ab", text: "#fff" },
     { id: "ACC", label: "ACC / IGN", color: "#fb8c00", text: "#111" },
     { id: "RPM", label: "RPM / Tacho", color: "#8e24aa", text: "#fff" },
     { id: "SPEED", label: "SPEED / VSS", color: "#6d4c41", text: "#fff" },
@@ -19,8 +21,6 @@
     { id: "TURN_L", label: "Direccional Izq", color: "#00acc1", text: "#fff" },
     { id: "TURN_R", label: "Direccional Der", color: "#26c6da", text: "#111" },
     { id: "NEUTRAL", label: "Neutral", color: "#7cb342", text: "#111" },
-    { id: "CAN_H", label: "CAN-H", color: "#5e35b1", text: "#fff" },
-    { id: "CAN_L", label: "CAN-L", color: "#3949ab", text: "#fff" },
     { id: "NC", label: "NC / Vacío", color: "#90a4ae", text: "#111" },
   ];
 
@@ -265,7 +265,7 @@ Reglas:
         version: normalizeKey($("scan-version")?.value) || "V1",
         modulo: $("scan-modulo")?.value || "DASH",
         voltaje: "12V",
-        forma: $("scan-forma-pin")?.value || "rect",
+        forma: $("scan-forma-pin")?.value || "circle",
         filas: parseInt($("scan-filas")?.value, 10) || 1,
         notas: "",
       };
@@ -276,7 +276,7 @@ Reglas:
       version: normalizeKey($("version")?.value) || "V1",
       modulo: $("modulo-tipo")?.value || "DASH",
       voltaje: $("voltaje")?.value || "12V",
-      forma: $("forma-pin")?.value || "rect",
+      forma: $("forma-pin")?.value || "circle",
       filas: parseInt($("nuevo-filas")?.value, 10) || 1,
       notas: $("notas")?.value || "",
     };
@@ -306,7 +306,7 @@ Reglas:
     if (!el) return;
     const filas = Math.max(1, meta.filas || 1);
     const cols = Math.max(1, columns || Math.ceil((pins.length || 1) / filas));
-    const forma = meta.forma || "rect";
+    const forma = meta.forma || "circle";
     const marca = meta.marca || "GENÉRICO";
     const modelo = meta.modelo || "CONECTOR";
     const version = meta.version || "V1";
@@ -360,18 +360,26 @@ Reglas:
       if (!editable) cell.disabled = true;
 
       const signalColor = pin.color || "";
+      const signalLabel = (pin.label || pin.signal || "").toUpperCase();
       if (signalColor) {
         cell.style.setProperty("--signal", signalColor);
         cell.style.setProperty("--signal-text", pin.text || contrastText(signalColor));
       }
 
       cell.innerHTML = `
+        ${signalLabel ? `
+          <span class="pin-callout" aria-hidden="true">
+            <span class="callout-label">${escapeHtml(signalLabel)}</span>
+            <span class="callout-stem"></span>
+            <span class="callout-arrow"></span>
+          </span>
+        ` : ""}
         <span class="pin-num">${pin.n}</span>
         <span class="pin-blade">
           <span class="blade-metal"></span>
           <span class="blade-tip"></span>
         </span>
-        <span class="pin-tag">${pin.label || pin.signal ? escapeHtml(pin.label || pin.signal) : ""}</span>
+        <span class="pin-tag">${signalLabel ? escapeHtml(signalLabel) : ""}</span>
       `;
 
       if (editable) cell.addEventListener("click", () => onClick(pin, idx, pins));
@@ -425,10 +433,12 @@ Reglas:
   function openPinModal(pin, index, pinsArrayName) {
     state.currentPinTarget = pinsArrayName;
     state.currentPinIndex = index;
-    state.selectedSignal = pin.signal || "";
-    state.selectedColor = pin.color || "";
+    // Si el pin está vacío, sugerimos 12V por defecto
+    const defaultSignal = SENALES[0];
+    state.selectedSignal = pin.signal || defaultSignal.id;
+    state.selectedColor = pin.color || defaultSignal.color;
     $("modal-pin-titulo").textContent = `PIN ${pin.n}`;
-    $("pin-custom").value = pin.label || pin.signal || "";
+    $("pin-custom").value = pin.label || pin.signal || defaultSignal.id;
 
     const list = $("lista-senales");
     list.innerHTML = "";
@@ -438,7 +448,9 @@ Reglas:
       b.textContent = s.label;
       b.style.background = s.color;
       b.style.color = s.text;
-      if (state.selectedSignal === s.id) b.classList.add("selected");
+      if (state.selectedSignal === s.id || (state.selectedSignal === "BATT" && s.id === "12V")) {
+        b.classList.add("selected");
+      }
       b.addEventListener("click", () => {
         state.selectedSignal = s.id;
         state.selectedColor = s.color;
@@ -560,7 +572,7 @@ Reglas:
       const version = normalizeKey($("scan-version").value) || "V1";
       const filas = parseInt($("scan-filas").value, 10);
       const pines = parseInt($("scan-pines").value, 10);
-      const forma = $("scan-forma-pin").value || "rect";
+      const forma = $("scan-forma-pin").value || "circle";
       const modulo = $("scan-modulo").value || "DASH";
       if (!marca || !modelo) throw new Error("Marca y modelo son obligatorios");
       if (!state.pinsScan.length) throw new Error("Genera el pinout primero");
@@ -591,7 +603,7 @@ Reglas:
     const version = normalizeKey($("version").value) || "V1";
     const filas = parseInt($("nuevo-filas").value, 10);
     const pines = parseInt($("nuevo-pines").value, 10);
-    const forma = $("forma-pin").value || "rect";
+    const forma = $("forma-pin").value || "circle";
     const modulo = $("modulo-tipo").value || "DASH";
     if (!marca || !modelo) throw new Error("Marca y modelo son obligatorios");
     if (!state.pinsNuevo.length) throw new Error("Genera el pinout primero");
@@ -780,7 +792,7 @@ Reglas:
         version: item.version,
         modulo: item.modulo || "DASH",
         voltaje: item.voltaje || "12V",
-        forma: item.forma || "rect",
+        forma: item.forma || "circle",
         filas: item.filas || 1,
         notas: item.notas || "",
         slug: item.slug,
@@ -801,7 +813,7 @@ Reglas:
     $("nuevo-filas").value = item.filas || "";
     $("nuevo-pines").value = item.pines || "";
     $("notas").value = item.notas || "";
-    if ($("forma-pin")) $("forma-pin").value = item.forma || "rect";
+    if ($("forma-pin")) $("forma-pin").value = item.forma || "circle";
     if ($("modulo-tipo")) $("modulo-tipo").value = item.modulo || "DASH";
     state.clusterDataUrl = item.fotoCluster || null;
     state.conectorDataUrl = item.fotoConector || null;
