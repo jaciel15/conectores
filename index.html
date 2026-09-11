@@ -49,12 +49,29 @@
           <div class="campo"><label for="scan-filas">Filas</label><input id="scan-filas" type="number" min="1" max="20"></div>
           <div class="campo"><label for="scan-pines">Pines</label><input id="scan-pines" type="number" min="1" max="120"></div>
         </div>
-        <button type="button" class="btn-principal" id="btn-generar-desde-scan">Generar pinout</button>
+        <div class="grid-2">
+          <div class="campo">
+            <label for="scan-forma-pin">Forma del pin</label>
+            <select id="scan-forma-pin">
+              <option value="rect" selected>Rectangular (real)</option>
+              <option value="square">Cuadrado</option>
+              <option value="circle">Circular</option>
+            </select>
+          </div>
+          <div class="campo">
+            <label for="scan-modulo">Módulo</label>
+            <select id="scan-modulo">
+              <option value="DASH" selected>DASH / Cluster</option>
+              <option value="ECU">ECU</option>
+              <option value="ABS">ABS</option>
+            </select>
+          </div>
+        </div>
+        <button type="button" class="btn-principal" id="btn-generar-desde-scan">Generar ficha pinout</button>
       </div>
       <div id="resultado-scan" class="panel hidden">
-        <h2>Pinout detectado</h2>
-        <div id="pinout-scan" class="pinout-grid"></div>
-        <div class="leyenda" id="leyenda-scan"></div>
+        <h2>Ficha técnica detectada</h2>
+        <div id="pinout-scan" class="ficha-host"></div>
         <div class="grid-2" style="margin-top:12px;">
           <div class="campo">
             <label for="scan-categoria">Categoría</label>
@@ -132,16 +149,34 @@
           <div class="campo"><label for="nuevo-filas">Filas</label><input id="nuevo-filas" type="number" min="1" max="20"></div>
           <div class="campo"><label for="nuevo-pines">Pines</label><input id="nuevo-pines" type="number" min="1" max="120"></div>
         </div>
+        <div class="grid-2">
+          <div class="campo">
+            <label for="forma-pin">Forma del pin</label>
+            <select id="forma-pin">
+              <option value="rect" selected>Rectangular (real)</option>
+              <option value="square">Cuadrado</option>
+              <option value="circle">Circular</option>
+            </select>
+          </div>
+          <div class="campo">
+            <label for="modulo-tipo">Módulo</label>
+            <select id="modulo-tipo">
+              <option value="DASH" selected>DASH / Cluster</option>
+              <option value="ECU">ECU</option>
+              <option value="ABS">ABS</option>
+              <option value="BCM">BCM</option>
+            </select>
+          </div>
+        </div>
         <div class="acciones">
           <button type="button" id="btn-ia-nuevo">⚡ Detectar con IA</button>
           <button type="button" class="btn-principal" id="btn-generar-nuevo">Generar pinout 12V</button>
         </div>
       </div>
       <div id="resultado-nuevo" class="panel hidden">
-        <h2>Editor de pines 12V</h2>
-        <p class="subtitulo" style="margin-bottom:8px;">Toca un pin para elegir señal y color.</p>
-        <div id="pinout-nuevo" class="pinout-grid"></div>
-        <div class="leyenda" id="leyenda-nuevo"></div>
+        <h2>Ficha técnica del conector</h2>
+        <p class="subtitulo" style="margin-bottom:8px;">Toca un pin para asignar señal y color. La ficha se ve como diagrama profesional.</p>
+        <div id="pinout-nuevo" class="ficha-host"></div>
         <div class="campo" style="margin-top:12px;">
           <label for="notas">Notas</label>
           <textarea id="notas" placeholder="Vista desde cables / macho / hembra"></textarea>
@@ -166,8 +201,7 @@
       <div class="panel">
         <div class="preview-box" id="detalle-foto"><div class="placeholder">Sin foto</div></div>
         <p id="detalle-meta" class="subtitulo" style="margin-top:12px;"></p>
-        <div id="pinout-detalle" class="pinout-grid"></div>
-        <div class="leyenda" id="leyenda-detalle"></div>
+        <div id="pinout-detalle" class="ficha-host"></div>
         <div class="acciones" style="margin-top:14px;">
           <button type="button" class="btn-principal" id="btn-editar">✏️ Editar conector</button>
           <button type="button" class="btn-secundario" id="btn-detalle-atras">⬅ Atrás</button>

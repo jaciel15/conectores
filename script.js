@@ -250,25 +250,149 @@ Reglas:
     return out;
   }
 
-  function renderPinout(containerId, pins, columns, onClick) {
+  function slugify(parts) {
+    return parts
+      .filter(Boolean)
+      .map((p) => String(p).trim().toUpperCase().replace(/\s+/g, "_").replace(/[^A-Z0-9_-]/g, ""))
+      .join("_") + "_";
+  }
+
+  function getMetaForTarget(target) {
+    if (target === "scan") {
+      return {
+        marca: normalizeKey($("scan-marca")?.value) || "GENÉRICO",
+        modelo: normalizeKey($("scan-modelo")?.value) || "CONECTOR",
+        version: normalizeKey($("scan-version")?.value) || "V1",
+        modulo: $("scan-modulo")?.value || "DASH",
+        voltaje: "12V",
+        forma: $("scan-forma-pin")?.value || "rect",
+        filas: parseInt($("scan-filas")?.value, 10) || 1,
+        notas: "",
+      };
+    }
+    return {
+      marca: normalizeKey($("marca")?.value) || "GENÉRICO",
+      modelo: normalizeKey($("modelo")?.value) || "CONECTOR",
+      version: normalizeKey($("version")?.value) || "V1",
+      modulo: $("modulo-tipo")?.value || "DASH",
+      voltaje: $("voltaje")?.value || "12V",
+      forma: $("forma-pin")?.value || "rect",
+      filas: parseInt($("nuevo-filas")?.value, 10) || 1,
+      notas: $("notas")?.value || "",
+    };
+  }
+
+  function usedLegend(pins) {
+    const map = new Map();
+    pins.forEach((p) => {
+      if (!p.signal && !p.label) return;
+      const key = p.signal || p.label;
+      if (!map.has(key)) {
+        map.set(key, {
+          id: key,
+          label: p.label || p.signal,
+          color: p.color || "#90a4ae",
+        });
+      }
+    });
+    if (!map.size) {
+      return SENALES.slice(0, 4).map((s) => ({ id: s.id, label: s.label, color: s.color }));
+    }
+    return [...map.values()];
+  }
+
+  function renderPinout(containerId, pins, columns, onClick, meta = {}) {
     const el = $(containerId);
     if (!el) return;
-    const cols = Math.max(1, columns || Math.ceil(Math.sqrt(pins.length || 1)));
-    el.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+    const filas = Math.max(1, meta.filas || 1);
+    const cols = Math.max(1, columns || Math.ceil((pins.length || 1) / filas));
+    const forma = meta.forma || "rect";
+    const marca = meta.marca || "GENÉRICO";
+    const modelo = meta.modelo || "CONECTOR";
+    const version = meta.version || "V1";
+    const modulo = meta.modulo || "DASH";
+    const voltaje = meta.voltaje || "12V";
+    const notas = meta.notas || "";
+    const slug = meta.slug || slugify([marca, modelo, version, modulo]);
+    const editable = typeof onClick === "function";
+    const legend = usedLegend(pins);
+
+    el.className = "ficha-host";
     el.innerHTML = "";
+    el.style.gridTemplateColumns = "";
+
+    const card = document.createElement("article");
+    card.className = "ficha-pinout";
+    card.innerHTML = `
+      <header class="ficha-head">
+        <div class="ficha-brand">${escapeHtml(marca)} ${escapeHtml(modelo)}</div>
+        <div class="ficha-mod">MÓDULO: ${escapeHtml(modulo)} · ${escapeHtml(voltaje)} · ${escapeHtml(version)} · ${pins.length} PINES</div>
+      </header>
+      <div class="ficha-body">
+        <div class="port-frame" aria-label="Conector físico">
+          <div class="port-bevel">
+            <div class="plug-body">
+              <div class="plug-keyway" aria-hidden="true">
+                <span></span><span></span><span></span>
+              </div>
+              <div class="plug-cavity">
+                <div class="pin-matrix rows-${filas}" style="--cols:${cols};--rows:${filas}"></div>
+              </div>
+              <div class="plug-rail" aria-hidden="true"></div>
+            </div>
+          </div>
+        </div>
+        <div class="ficha-leyenda"></div>
+        ${notas
+          ? `<p class="ficha-nota"><strong>NOTA:</strong> ${escapeHtml(notas)}</p>`
+          : `<p class="ficha-nota muted-note">Vista frontal · carcasa negra · inserto gris · pines metálicos</p>`}
+      </div>
+      <footer class="ficha-foot">${escapeHtml(slug)}</footer>
+    `;
+
+    const matrix = card.querySelector(".pin-matrix");
     pins.forEach((pin, idx) => {
-      const div = document.createElement("div");
-      div.className = "pin";
-      div.dataset.index = String(idx);
-      if (pin.color) {
-        div.style.background = pin.color;
-        div.style.color = pin.text || contrastText(pin.color);
-        div.style.borderColor = pin.color === "#ffffff" ? "#90a4ae" : pin.color;
-      }
-      div.innerHTML = `${pin.n}${pin.label || pin.signal ? `<small>${pin.label || pin.signal}</small>` : ""}`;
-      div.addEventListener("click", () => onClick(pin, idx, pins));
-      el.appendChild(div);
+      const cell = document.createElement("button");
+      cell.type = "button";
+      cell.className = `pin-cell shape-${forma}${pin.color ? " filled" : ""}`;
+      cell.dataset.index = String(idx);
+      cell.title = pin.label || pin.signal || `Pin ${pin.n}`;
+      if (!editable) cell.disabled = true;
+
+      const signalColor = pin.color || "";
+      const faceStyle = signalColor
+        ? `--signal:${signalColor};--signal-text:${pin.text || contrastText(signalColor)}`
+        : "";
+
+      cell.innerHTML = `
+        <span class="pin-num">${pin.n}</span>
+        <span class="pin-blade" style="${faceStyle}">
+          <span class="blade-metal"></span>
+          <span class="blade-tip"></span>
+        </span>
+        <span class="pin-tag">${pin.label || pin.signal ? escapeHtml(pin.label || pin.signal) : ""}</span>
+      `;
+
+      if (editable) cell.addEventListener("click", () => onClick(pin, idx, pins));
+      matrix.appendChild(cell);
     });
+
+    const remainder = pins.length % cols;
+    if (remainder > 0) {
+      for (let i = 0; i < cols - remainder; i++) {
+        const empty = document.createElement("div");
+        empty.className = "pin-cell empty-slot";
+        empty.innerHTML = `<span class="pin-num">&nbsp;</span><span class="pin-blade ghost"><span class="blade-metal"></span></span><span class="pin-tag"></span>`;
+        matrix.appendChild(empty);
+      }
+    }
+
+    const ley = card.querySelector(".ficha-leyenda");
+    ley.innerHTML = legend.map((item) =>
+      `<span class="ley-item"><i class="ley-swatch" style="background:${item.color}"></i>${escapeHtml(item.label || item.id)}</span>`
+    ).join("");
+
+    el.appendChild(card);
   }
 
   function contrastText(hex) {
@@ -281,12 +405,20 @@ Reglas:
     return yiq >= 160 ? "#111111" : "#ffffff";
   }
 
-  function renderLeyenda(id) {
-    const el = $(id);
-    if (!el) return;
-    el.innerHTML = SENALES.slice(0, 8).map((s) =>
-      `<span><i class="dot" style="background:${s.color};border:1px solid rgba(0,0,0,.15)"></i>${s.id}</span>`
-    ).join("");
+  function renderLeyenda() {
+    /* leyenda ahora vive dentro de la ficha */
+  }
+
+  function refreshPinoutTarget(target) {
+    if (target === "scan") {
+      const meta = getMetaForTarget("scan");
+      const cols = Math.ceil(state.pinsScan.length / Math.max(1, meta.filas));
+      renderPinout("pinout-scan", state.pinsScan, cols, (p, i) => openPinModal(p, i, "scan"), meta);
+    } else {
+      const meta = getMetaForTarget("nuevo");
+      const cols = Math.ceil(state.pinsNuevo.length / Math.max(1, meta.filas));
+      renderPinout("pinout-nuevo", state.pinsNuevo, cols, (p, i) => openPinModal(p, i, "nuevo"), meta);
+    }
   }
 
   function openPinModal(pin, index, pinsArrayName) {
@@ -351,14 +483,7 @@ Reglas:
     pin.color = state.selectedColor || (known ? known.color : "#90a4ae");
     pin.text = contrastText(pin.color);
     $("modal-pin").classList.remove("open");
-
-    if (state.currentPinTarget === "scan") {
-      const cols = Math.ceil(arr.length / Math.max(1, parseInt($("scan-filas").value, 10) || 1));
-      renderPinout("pinout-scan", arr, cols, (p, i) => openPinModal(p, i, "scan"));
-    } else {
-      const cols = Math.ceil(arr.length / Math.max(1, parseInt($("nuevo-filas").value, 10) || 1));
-      renderPinout("pinout-nuevo", arr, cols, (p, i) => openPinModal(p, i, "nuevo"));
-    }
+    refreshPinoutTarget(state.currentPinTarget);
   }
 
   function setAiBadge(id, type, text) {
@@ -406,10 +531,8 @@ Reglas:
       return;
     }
     state.pinsScan = makePins(pines, state.pinsScan);
-    const cols = Math.ceil(pines / filas);
     $("resultado-scan").classList.remove("hidden");
-    renderPinout("pinout-scan", state.pinsScan, cols, (p, i) => openPinModal(p, i, "scan"));
-    renderLeyenda("leyenda-scan");
+    refreshPinoutTarget("scan");
   }
 
   function generateNuevo() {
@@ -420,10 +543,8 @@ Reglas:
       return;
     }
     state.pinsNuevo = makePins(pines, state.pinsNuevo);
-    const cols = Math.ceil(pines / filas);
     $("resultado-nuevo").classList.remove("hidden");
-    renderPinout("pinout-nuevo", state.pinsNuevo, cols, (p, i) => openPinModal(p, i, "nuevo"));
-    renderLeyenda("leyenda-nuevo");
+    refreshPinoutTarget("nuevo");
   }
 
   function normalizeKey(s) {
@@ -438,6 +559,8 @@ Reglas:
       const version = normalizeKey($("scan-version").value) || "V1";
       const filas = parseInt($("scan-filas").value, 10);
       const pines = parseInt($("scan-pines").value, 10);
+      const forma = $("scan-forma-pin").value || "rect";
+      const modulo = $("scan-modulo").value || "DASH";
       if (!marca || !modelo) throw new Error("Marca y modelo son obligatorios");
       if (!state.pinsScan.length) throw new Error("Genera el pinout primero");
       return {
@@ -446,6 +569,8 @@ Reglas:
         marca,
         modelo,
         version,
+        modulo,
+        forma,
         voltaje: "12V",
         filas,
         pines,
@@ -454,6 +579,7 @@ Reglas:
         fotoConector: state.scanDataUrl,
         fotoCluster: null,
         notas: "",
+        slug: slugify([marca, modelo, version, modulo]),
         updatedAt: Date.now(),
       };
     }
@@ -464,6 +590,8 @@ Reglas:
     const version = normalizeKey($("version").value) || "V1";
     const filas = parseInt($("nuevo-filas").value, 10);
     const pines = parseInt($("nuevo-pines").value, 10);
+    const forma = $("forma-pin").value || "rect";
+    const modulo = $("modulo-tipo").value || "DASH";
     if (!marca || !modelo) throw new Error("Marca y modelo son obligatorios");
     if (!state.pinsNuevo.length) throw new Error("Genera el pinout primero");
     return {
@@ -472,6 +600,8 @@ Reglas:
       marca,
       modelo,
       version,
+      modulo,
+      forma,
       voltaje: $("voltaje").value || "12V",
       filas,
       pines,
@@ -480,6 +610,7 @@ Reglas:
       fotoConector: state.conectorDataUrl,
       fotoCluster: state.clusterDataUrl,
       notas: $("notas").value.trim(),
+      slug: slugify([marca, modelo, version, modulo]),
       updatedAt: Date.now(),
     };
   }
@@ -637,8 +768,23 @@ Reglas:
     $("detalle-titulo").textContent = `${item.marca} ${item.modelo}`;
     $("detalle-meta").textContent = `${titleCase(item.categoria)} · ${item.version} · ${item.voltaje} · ${item.filas} filas · ${item.pines} pines${item.notas ? " · " + item.notas : ""}`;
     setPreview("detalle-foto", item.fotoConector || item.fotoCluster, "Sin foto");
-    renderPinout("pinout-detalle", item.pins || [], item.columns || Math.ceil((item.pines || 1) / (item.filas || 1)), () => {});
-    renderLeyenda("leyenda-detalle");
+    renderPinout(
+      "pinout-detalle",
+      item.pins || [],
+      item.columns || Math.ceil((item.pines || 1) / (item.filas || 1)),
+      null,
+      {
+        marca: item.marca,
+        modelo: item.modelo,
+        version: item.version,
+        modulo: item.modulo || "DASH",
+        voltaje: item.voltaje || "12V",
+        forma: item.forma || "rect",
+        filas: item.filas || 1,
+        notas: item.notas || "",
+        slug: item.slug,
+      }
+    );
     showVista("detalle");
   }
 
@@ -654,6 +800,8 @@ Reglas:
     $("nuevo-filas").value = item.filas || "";
     $("nuevo-pines").value = item.pines || "";
     $("notas").value = item.notas || "";
+    if ($("forma-pin")) $("forma-pin").value = item.forma || "rect";
+    if ($("modulo-tipo")) $("modulo-tipo").value = item.modulo || "DASH";
     state.clusterDataUrl = item.fotoCluster || null;
     state.conectorDataUrl = item.fotoConector || null;
     state.pinsNuevo = (item.pins || []).map((p) => ({ ...p }));
@@ -661,8 +809,7 @@ Reglas:
     setPreview("preview-conector", state.conectorDataUrl, "Foto conector");
     if (state.pinsNuevo.length) {
       $("resultado-nuevo").classList.remove("hidden");
-      renderPinout("pinout-nuevo", state.pinsNuevo, item.columns || Math.ceil(item.pines / item.filas), (p, i) => openPinModal(p, i, "nuevo"));
-      renderLeyenda("leyenda-nuevo");
+      refreshPinoutTarget("nuevo");
     } else {
       $("resultado-nuevo").classList.add("hidden");
     }
@@ -829,6 +976,31 @@ Reglas:
     $("btn-ia-nuevo").addEventListener("click", () => runAI("nuevo"));
     $("btn-generar-nuevo").addEventListener("click", generateNuevo);
     $("btn-guardar-nuevo").addEventListener("click", () => saveFrom("nuevo"));
+
+    ["forma-pin", "modulo-tipo", "marca", "modelo", "version", "notas", "nuevo-filas"].forEach((id) => {
+      const el = $(id);
+      if (!el) return;
+      el.addEventListener("change", () => {
+        if (state.pinsNuevo.length) refreshPinoutTarget("nuevo");
+      });
+      el.addEventListener("input", () => {
+        if (state.pinsNuevo.length && (id === "marca" || id === "modelo" || id === "version" || id === "notas")) {
+          refreshPinoutTarget("nuevo");
+        }
+      });
+    });
+    ["scan-forma-pin", "scan-modulo", "scan-marca", "scan-modelo", "scan-version", "scan-filas"].forEach((id) => {
+      const el = $(id);
+      if (!el) return;
+      el.addEventListener("change", () => {
+        if (state.pinsScan.length) refreshPinoutTarget("scan");
+      });
+      el.addEventListener("input", () => {
+        if (state.pinsScan.length && (id === "scan-marca" || id === "scan-modelo" || id === "scan-version")) {
+          refreshPinoutTarget("scan");
+        }
+      });
+    });
 
     $("btn-guardar-config").addEventListener("click", () => {
       saveConfig({
