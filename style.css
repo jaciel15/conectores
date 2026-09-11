@@ -549,23 +549,23 @@ html[data-theme="dark"] .ficha-mod { color: #93aab3; }
 
 .port-frame {
   margin: 10px auto 16px;
-  padding: 18px 14px;
+  padding: 22px 16px;
   max-width: 100%;
-  border-radius: 48% / 28%;
+  border-radius: 46% / 30%;
   background:
-    radial-gradient(ellipse at 50% 35%, #3a3f45 0%, #1a1d21 42%, #0a0c0e 78%);
+    radial-gradient(ellipse at 50% 28%, #4a5058 0%, #23272c 28%, #121518 58%, #070809 100%);
   box-shadow:
-    inset 0 8px 18px rgba(255, 255, 255, 0.05),
-    inset 0 -18px 28px rgba(0, 0, 0, 0.7),
-    0 14px 28px rgba(0, 0, 0, 0.28);
+    inset 0 10px 20px rgba(255, 255, 255, 0.06),
+    inset 0 -22px 34px rgba(0, 0, 0, 0.75),
+    0 16px 32px rgba(0, 0, 0, 0.32);
   border: 2px solid #050607;
 }
 
 .port-bevel {
-  border-radius: 18px;
-  padding: 10px;
+  border-radius: 16px;
+  padding: 12px;
   background:
-    linear-gradient(180deg, rgba(255,255,255,0.05), rgba(0,0,0,0.35));
+    linear-gradient(180deg, rgba(255,255,255,0.06), rgba(0,0,0,0.4));
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
 }
 
@@ -573,15 +573,15 @@ html[data-theme="dark"] .ficha-mod { color: #93aab3; }
   position: relative;
   margin: 0 auto;
   max-width: 100%;
-  border-radius: 10px;
+  border-radius: 12px;
   background:
-    linear-gradient(180deg, #d7dde3 0%, #b7c0c8 45%, #9aa5af 100%);
+    linear-gradient(180deg, #e4e8ed 0%, #c4ccd4 42%, #9eaab4 100%);
   border: 1.5px solid #6f7a84;
   box-shadow:
-    inset 0 2px 0 rgba(255, 255, 255, 0.75),
-    inset 0 -3px 6px rgba(0, 0, 0, 0.22),
-    0 6px 14px rgba(0, 0, 0, 0.35);
-  padding: 14px 12px 12px;
+    inset 0 2px 0 rgba(255, 255, 255, 0.8),
+    inset 0 -4px 8px rgba(0, 0, 0, 0.2),
+    0 8px 16px rgba(0, 0, 0, 0.38);
+  padding: 16px 12px 14px;
 }
 
 .plug-keyway {
@@ -589,50 +589,134 @@ html[data-theme="dark"] .ficha-mod { color: #93aab3; }
   justify-content: space-between;
   align-items: flex-start;
   gap: 8px;
-  margin: -6px 8px 8px;
-  height: 10px;
+  margin: -8px 10px 10px;
+  height: 12px;
 }
 
 .plug-keyway span {
   flex: 1;
-  height: 8px;
-  border-radius: 0 0 6px 6px;
-  background: #1b1f24;
+  height: 10px;
+  border-radius: 0 0 7px 7px;
+  background: #15191e;
   box-shadow:
     inset 0 -1px 0 rgba(255, 255, 255, 0.08),
-    0 1px 0 rgba(255, 255, 255, 0.25);
+    0 1px 0 rgba(255, 255, 255, 0.3);
 }
 
 .plug-keyway span:nth-child(2) {
-  flex: 0.7;
-  height: 6px;
-  margin-top: 2px;
-  background: #252b31;
+  flex: 0.55;
+  height: 7px;
+  margin-top: 3px;
+  background: #222830;
 }
 
 .plug-cavity {
   background:
-    linear-gradient(180deg, #2b3238, #171c21);
-  border-radius: 8px;
-  border: 1px solid #0d1013;
-  padding: 12px 10px 10px;
+    linear-gradient(180deg, #333b42, #14191e);
+  border-radius: 9px;
+  border: 1px solid #0b0e11;
+  padding: 14px 10px 12px;
   box-shadow:
-    inset 0 4px 10px rgba(0, 0, 0, 0.55),
+    inset 0 6px 14px rgba(0, 0, 0, 0.6),
     inset 0 1px 0 rgba(255, 255, 255, 0.05);
-}
-
-.plug-rail {
-  margin-top: 8px;
-  height: 4px;
-  border-radius: 999px;
-  background: linear-gradient(90deg, transparent, rgba(0,0,0,0.2), transparent);
 }
 
 .pin-matrix {
   display: grid;
   grid-template-columns: repeat(var(--cols, 12), minmax(0, 1fr));
-  gap: 8px 6px;
-  align-items: end;
+  gap: 12px 6px;
+  align-items: start;
+}
+
+.pin-num {
+  font-size: 9px;
+  line-height: 1;
+  color: #e8eef2;
+  font-weight: 800;
+  text-shadow: 0 1px 2px rgba(0,0,0,.8);
+}
+
+.pin-blade {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 13px;
+  height: 26px;
+  z-index: 1;
+  transition: transform 0.15s ease, filter 0.15s ease;
+}
+
+.blade-metal {
+  width: 100%;
+  height: 100%;
+  border-radius: 2px;
+  background:
+    linear-gradient(90deg,
+      #7a5d20 0%,
+      #e8c56a 16%,
+      #fff1b8 34%,
+      #d2ad4e 52%,
+      #f8e293 70%,
+      #8d6a28 100%);
+  border: 1px solid #5e4818;
+  box-shadow:
+    inset 1px 0 0 rgba(255, 255, 255, 0.55),
+    inset -1px 0 0 rgba(0, 0, 0, 0.28),
+    inset 0 -4px 5px rgba(0, 0, 0, 0.28),
+    0 2px 3px rgba(0, 0, 0, 0.5);
+}
+
+.blade-tip {
+  position: absolute;
+  left: 18%;
+  right: 18%;
+  bottom: -2px;
+  height: 4px;
+  border-radius: 1px;
+  background: linear-gradient(180deg, #efd27a, #6d541c);
+  opacity: 0.95;
+}
+
+.shape-rect .pin-blade { width: 11px; height: 28px; }
+.shape-square .pin-blade { width: 17px; height: 17px; }
+.shape-square .blade-tip { display: none; }
+.shape-circle .pin-blade { width: 17px; height: 17px; }
+.shape-circle .blade-metal { border-radius: 50%; }
+.shape-circle .blade-tip { display: none; }
+
+.pin-cell.filled .pin-blade::before {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  border-radius: 4px;
+  border: 2.5px solid var(--signal, #00d6e8);
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.45),
+    0 0 12px color-mix(in srgb, var(--signal, #00d6e8) 65%, transparent);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.shape-circle.filled .pin-blade::before { border-radius: 50%; }
+
+.pin-tag {
+  min-height: 11px;
+  max-width: 100%;
+  font-size: 7px;
+  line-height: 1.1;
+  color: #9aa6ae;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pin-cell.filled .pin-tag {
+  color: #fff;
+  background: var(--signal, #90a4ae);
+  padding: 2px 4px;
+  border-radius: 4px;
+  font-weight: 800;
+  box-shadow: 0 1px 2px rgba(0,0,0,.35);
 }
 
 .pin-cell {
@@ -670,103 +754,13 @@ html[data-theme="dark"] .ficha-mod { color: #93aab3; }
   filter: brightness(1.1);
 }
 
-.pin-num {
-  font-size: 9px;
-  line-height: 1;
-  color: #c5d0d7;
-  font-weight: 800;
-}
-
-.pin-blade {
-  position: relative;
-  display: grid;
-  place-items: center;
-  width: 14px;
-  height: 22px;
-  transition: transform 0.15s ease, filter 0.15s ease;
-}
-
-.blade-metal {
-  width: 100%;
-  height: 100%;
-  border-radius: 2px;
-  background:
-    linear-gradient(90deg,
-      #8a6a28 0%,
-      #f0d27a 18%,
-      #ffe9a8 35%,
-      #c9a44a 55%,
-      #f6de8d 72%,
-      #9a752f 100%);
-  border: 1px solid #6d541d;
-  box-shadow:
-    inset 1px 0 0 rgba(255, 255, 255, 0.45),
-    inset -1px 0 0 rgba(0, 0, 0, 0.25),
-    inset 0 -3px 4px rgba(0, 0, 0, 0.25),
-    0 1px 2px rgba(0, 0, 0, 0.45);
-}
-
-.blade-tip {
-  position: absolute;
-  left: 15%;
-  right: 15%;
-  bottom: -2px;
-  height: 4px;
-  border-radius: 1px;
-  background: linear-gradient(180deg, #e8c56a, #7a5f22);
-  opacity: 0.9;
-}
-
-/* formas */
-.shape-rect .pin-blade { width: 12px; height: 24px; }
-.shape-square .pin-blade { width: 16px; height: 16px; }
-.shape-square .blade-tip { display: none; }
-.shape-circle .pin-blade { width: 16px; height: 16px; }
-.shape-circle .blade-metal { border-radius: 50%; }
-.shape-circle .blade-tip { display: none; }
-
-/* pin con señal: anillo de color + brillo */
-.pin-cell.filled .pin-blade::before {
-  content: "";
-  position: absolute;
-  inset: -3px;
-  border-radius: 3px;
-  border: 2px solid var(--signal, #00d6e8);
-  box-shadow:
-    0 0 0 1px rgba(0, 0, 0, 0.35),
-    0 0 10px color-mix(in srgb, var(--signal, #00d6e8) 55%, transparent);
-  pointer-events: none;
-  z-index: 1;
-}
-
-.shape-circle.filled .pin-blade::before { border-radius: 50%; }
-
 .pin-cell.filled .blade-metal {
   box-shadow:
-    inset 1px 0 0 rgba(255, 255, 255, 0.45),
-    inset -1px 0 0 rgba(0, 0, 0, 0.25),
-    inset 0 -3px 4px rgba(0, 0, 0, 0.25),
-    0 0 8px color-mix(in srgb, var(--signal, #00d6e8) 40%, transparent),
-    0 1px 2px rgba(0, 0, 0, 0.45);
-}
-
-.pin-tag {
-  min-height: 10px;
-  font-size: 7px;
-  line-height: 1;
-  color: #aeb8bf;
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.pin-cell.filled .pin-tag {
-  color: var(--signal-text, #dce5ea);
-  background: color-mix(in srgb, var(--signal, #90a4ae) 85%, #000);
-  padding: 1px 3px;
-  border-radius: 3px;
-  font-weight: 800;
+    inset 1px 0 0 rgba(255, 255, 255, 0.55),
+    inset -1px 0 0 rgba(0, 0, 0, 0.28),
+    inset 0 -4px 5px rgba(0, 0, 0, 0.28),
+    0 0 10px color-mix(in srgb, var(--signal, #00d6e8) 45%, transparent),
+    0 2px 3px rgba(0, 0, 0, 0.5);
 }
 
 .pin-cell.empty-slot {

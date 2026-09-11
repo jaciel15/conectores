@@ -360,13 +360,14 @@ Reglas:
       if (!editable) cell.disabled = true;
 
       const signalColor = pin.color || "";
-      const faceStyle = signalColor
-        ? `--signal:${signalColor};--signal-text:${pin.text || contrastText(signalColor)}`
-        : "";
+      if (signalColor) {
+        cell.style.setProperty("--signal", signalColor);
+        cell.style.setProperty("--signal-text", pin.text || contrastText(signalColor));
+      }
 
       cell.innerHTML = `
         <span class="pin-num">${pin.n}</span>
-        <span class="pin-blade" style="${faceStyle}">
+        <span class="pin-blade">
           <span class="blade-metal"></span>
           <span class="blade-tip"></span>
         </span>
