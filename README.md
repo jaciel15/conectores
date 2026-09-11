@@ -2,14 +2,14 @@
 
 App web para pineados de velocímetros / clusters 12V.
 
-## Online (ya activa)
+## Acceso privado
 
-La **comunidad online** está activada de fábrica. No necesitas Firebase ni pegar ninguna config.
+La app **ya no es abierta para todo el mundo**. Tras el splash pide el **código del taller**.
 
-- Todos los clientes ven los mismos conectores en **Comunidad online**
-- Al **guardar** un conector, también se intenta publicar a la nube
-- Desde el detalle puedes pulsar **Publicar online**
-- En **Configuración** solo pon el nombre de tu taller (aparece como autor)
+- Código por defecto: `VELCDMX` (cámbialo en `script.js` → `TALLER_ACCESS_CODE`)
+- En **Configuración** puedes **Cerrar sesión** para volver a pedir el código
+- Guardar un conector queda **solo en el teléfono**; no se publica solo
+- Desde el detalle puedes pulsar **Publicar al taller** si quieres compartirlo con el equipo
 
 Sitio: https://jaciel15.github.io/conectores/
 
@@ -17,4 +17,5 @@ Sitio: https://jaciel15.github.io/conectores/
 
 - Cámara o Galería para fotos
 - Toca un pin → elige 12V / GND / CAN-H (se aplica al instante)
-- Guarda → se guarda en el teléfono y se publica online
+- Guarda → se guarda en el teléfono
+- Publicar al taller → solo cuando lo indiques

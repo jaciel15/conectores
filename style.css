@@ -144,6 +144,60 @@ a { color: var(--acento); }
 
 #status { color: var(--muted); margin-top: 10px; }
 
+#acceso {
+  position: fixed;
+  inset: 0;
+  z-index: 998;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 24px;
+  background:
+    radial-gradient(ellipse at 20% 10%, color-mix(in srgb, var(--acento) 18%, transparent), transparent 55%),
+    radial-gradient(ellipse at 80% 90%, color-mix(in srgb, var(--acento-2) 14%, transparent), transparent 50%),
+    var(--bg);
+}
+
+#acceso h1 {
+  color: var(--acento);
+  font-size: clamp(26px, 6.5vw, 40px);
+  text-align: center;
+}
+
+#acceso h2 {
+  color: var(--acento-2);
+  font-size: clamp(16px, 4vw, 22px);
+  margin-bottom: 4px;
+}
+
+.acceso-copy {
+  max-width: 420px;
+  color: var(--muted);
+  text-align: center;
+  line-height: 1.45;
+  margin-bottom: 8px;
+}
+
+.acceso-form {
+  width: min(420px, 92vw);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.acceso-form .btn-principal {
+  width: 100%;
+}
+
+.acceso-error {
+  color: #c62828;
+  font-size: 0.92rem;
+  text-align: center;
+  margin: 0;
+}
+
 #app {
   display: none;
   max-width: 880px;

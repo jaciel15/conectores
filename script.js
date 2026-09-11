@@ -4,6 +4,9 @@
   const STORAGE_KEY = "cg_conectores_v2";
   const CONFIG_KEY = "cg_config_v2";
   const THEME_KEY = "cg_theme";
+  const ACCESS_KEY = "cg_taller_unlocked_v1";
+  // Cambia este código antes de compartir el link con tu equipo.
+  const TALLER_ACCESS_CODE = "VELCDMX";
 
   const SENALES = [
     { id: "12V", label: "12V / BATT", color: "#e53935", text: "#fff" },
@@ -652,12 +655,6 @@ Reglas:
         marca: item.marca,
         modelo: item.modelo,
       };
-      // Intentar publicar online si la nube está configurada
-      publishToCloud(item)
-        .then(() => toast("También publicado en comunidad online"))
-        .catch((err) => {
-          toast("Guardado local. Nube: " + (err.message || "sin red"));
-        });
       showVista("db");
       renderDB();
     } catch (err) {
@@ -882,13 +879,64 @@ Reglas:
     updateCloudConfigBadge();
   }
 
-  /* ===== NUBE / COMUNIDAD (activa por defecto) ===== */
-  // Bucket público compartido — todos los clientes leen/publican aquí
+  /* ===== NUBE DEL TALLER (publicación manual) ===== */
+  // Bucket del taller — solo se usa tras el código de acceso de la app
   const CLOUD_BUCKET = "2bZdCTGWNeaf2mCZ3kDA8F";
   const CLOUD_BASE = `https://kvdb.io/${CLOUD_BUCKET}`;
   const CLOUD_PREFIX = "c_";
 
   let cloud = { ready: true, error: "" };
+
+  function isUnlocked() {
+    return localStorage.getItem(ACCESS_KEY) === "1";
+  }
+
+  function setUnlocked(on) {
+    if (on) localStorage.setItem(ACCESS_KEY, "1");
+    else localStorage.removeItem(ACCESS_KEY);
+  }
+
+  function normalizeAccessCode(value) {
+    return String(value || "").trim().toUpperCase();
+  }
+
+  function showAccessGate() {
+    $("splash").style.display = "none";
+    $("app").style.display = "none";
+    $("topbar").classList.add("hidden");
+    $("acceso").classList.remove("hidden");
+    const input = $("acceso-codigo");
+    if (input) {
+      input.value = "";
+      setTimeout(() => input.focus(), 50);
+    }
+  }
+
+  function enterApp() {
+    $("acceso").classList.add("hidden");
+    $("splash").style.display = "none";
+    $("app").style.display = "block";
+    $("topbar").classList.add("hidden");
+  }
+
+  function tryUnlock(code) {
+    const ok = normalizeAccessCode(code) === normalizeAccessCode(TALLER_ACCESS_CODE);
+    const err = $("acceso-error");
+    if (!ok) {
+      if (err) err.classList.remove("hidden");
+      return false;
+    }
+    if (err) err.classList.add("hidden");
+    setUnlocked(true);
+    enterApp();
+    return true;
+  }
+
+  function logoutTaller() {
+    setUnlocked(false);
+    showAccessGate();
+    toast("Sesión cerrada");
+  }
 
   function cloudKey(id) {
     const safe = String(id || "").replace(/[^a-zA-Z0-9_-]/g, "");
@@ -1000,18 +1048,18 @@ Reglas:
     const el = $("cloud-config-status");
     if (!el) return;
     el.className = "ai-badge ok";
-    el.textContent = "Nube compartida activa · lista para tus clientes";
+    el.textContent = "Nube del taller · publicación manual";
   }
 
   async function renderComunidad() {
     const box = $("lista-comunidad");
-    setCloudBadge("warn", `<span class="spinner"></span> Cargando comunidad…`);
+    setCloudBadge("warn", `<span class="spinner"></span> Cargando nube del taller…`);
     box.innerHTML = "";
     try {
       const list = await fetchCommunity();
-      setCloudBadge("ok", `Online · ${list.length} conectores públicos`);
+      setCloudBadge("ok", `Taller · ${list.length} conectores compartidos`);
       if (!list.length) {
-        box.innerHTML = `<div class="empty">Aún no hay publicaciones. Crea un conector, guárdalo y se publica solo a la comunidad.</div>`;
+        box.innerHTML = `<div class="empty">Aún no hay publicaciones. Guarda un conector en local y pulsa «Publicar al taller» en el detalle.</div>`;
         return;
       }
       box.innerHTML = list.map((item) => {
@@ -1043,7 +1091,7 @@ Reglas:
     cfg.author = ($("autor-nombre").value || "").trim() || "Anónimo";
     saveConfig(cfg);
     updateCloudConfigBadge();
-    toast("Nombre de taller guardado · nube ya activa");
+    toast("Nombre de taller guardado");
   }
 
   async function testCloud() {
@@ -1059,10 +1107,10 @@ Reglas:
   async function publishCurrent() {
     const item = loadConnectors().find((x) => x.id === state.detalleId);
     if (!item) return;
-    toast("Publicando en comunidad…");
+    toast("Publicando en nube del taller…");
     try {
       await publishToCloud(item);
-      toast("Publicado online ✔");
+      toast("Publicado en el taller ✔");
     } catch (err) {
       toast(err.message || "No se pudo publicar");
     }
@@ -1096,8 +1144,7 @@ Reglas:
     const mensajes = [
       "Cargando módulos...",
       "Preparando escáner...",
-      "Inicializando Pinout Engine...",
-      "Conectando base de datos...",
+      "Verificando acceso del taller...",
       "Sistema listo...",
     ];
     let percent = 0;
@@ -1112,9 +1159,8 @@ Reglas:
       if (percent >= 100) {
         clearInterval(timer);
         setTimeout(() => {
-          $("splash").style.display = "none";
-          $("app").style.display = "block";
-          $("topbar").classList.add("hidden");
+          if (isUnlocked()) enterApp();
+          else showAccessGate();
         }, 350);
       }
     }, 120);
@@ -1127,6 +1173,12 @@ Reglas:
     $("btn-tema-menu").addEventListener("click", () => applyTheme("dark"));
     $("btn-tema-menu-claro").addEventListener("click", () => applyTheme("light"));
     $("btn-cerrar-vista").addEventListener("click", cerrarVista);
+
+    $("form-acceso").addEventListener("submit", (e) => {
+      e.preventDefault();
+      tryUnlock($("acceso-codigo").value);
+    });
+    $("btn-cerrar-sesion").addEventListener("click", logoutTaller);
 
     $("btn-escanear").addEventListener("click", () => showVista("escanear"));
     $("btn-nuevo").addEventListener("click", () => {
@@ -1258,6 +1310,7 @@ Reglas:
   }
 
   function openFromHash() {
+    if (!isUnlocked()) return;
     const hash = (location.hash || "").replace("#", "").toLowerCase();
     const forced = sessionStorage.getItem("cg_open");
     if (forced) sessionStorage.removeItem("cg_open");
