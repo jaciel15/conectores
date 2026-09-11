@@ -909,19 +909,8 @@ Reglas:
     if (!res.ok) throw new Error("No se pudo publicar (" + res.status + ")");
   }
 
-  async function cloudGet(key) {
-    const res = await fetch(`${CLOUD_BASE}/${encodeURIComponent(key)}`, {
-      headers: { Accept: "application/json" },
-    });
-    if (res.status === 404) return null;
-    if (!res.ok) throw new Error("Error leyendo nube (" + res.status + ")");
-    return res.json();
-  }
-
   async function cloudListKeys() {
-    const res = await fetch(`${CLOUD_BASE}/?_=${Date.now()}`, {
-      headers: { Accept: "text/plain", "Cache-Control": "no-cache" },
-    });
+    const res = await fetch(`${CLOUD_BASE}/?_=${Date.now()}`);
     if (!res.ok) throw new Error("Error listando comunidad (" + res.status + ")");
     const text = (await res.text()).trim();
     if (!text) return [];
@@ -929,6 +918,13 @@ Reglas:
       .split(/\r?\n/)
       .map((s) => s.trim())
       .filter((k) => k.startsWith(CLOUD_PREFIX));
+  }
+
+  async function cloudGet(key) {
+    const res = await fetch(`${CLOUD_BASE}/${encodeURIComponent(key)}?_=${Date.now()}`);
+    if (res.status === 404) return null;
+    if (!res.ok) throw new Error("Error leyendo nube (" + res.status + ")");
+    return res.json();
   }
 
   async function shrinkPhoto(dataUrl) {
