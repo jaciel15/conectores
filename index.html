@@ -202,7 +202,7 @@
 
     <section id="vista-comunidad" class="vista">
       <h1 class="titulo">Comunidad online</h1>
-      <p class="subtitulo">Conectores y pineados publicados por todos tus clientes. Se ven en cualquier dispositivo.</p>
+      <p class="subtitulo">Nube compartida activa. Conectores publicados por todos tus clientes, en cualquier dispositivo.</p>
       <div id="cloud-status" class="ai-badge warn">Comprobando nube…</div>
       <div class="fila-botones" style="margin:12px 0;">
         <button type="button" class="btn-secundario" id="btn-comunidad-atras">⬅ Menú</button>
@@ -230,6 +230,7 @@
         <div id="pinout-detalle" class="ficha-host"></div>
         <div class="acciones" style="margin-top:14px;">
           <button type="button" class="btn-principal" id="btn-editar">✏️ Editar conector</button>
+          <button type="button" class="btn-secundario" id="btn-publicar-online">☁ Publicar online</button>
           <button type="button" class="btn-secundario" id="btn-detalle-atras">⬅ Atrás</button>
           <button type="button" class="btn-peligro" id="btn-detalle-borrar">🗑 Borrar</button>
         </div>
@@ -238,26 +239,17 @@
 
     <section id="vista-config" class="vista">
       <h1 class="titulo">Configuración</h1>
-      <p class="subtitulo">Activa la nube para que todos tus clientes vean y suban conectores.</p>
+      <p class="subtitulo">La nube compartida ya está activa: todos tus clientes ven y publican conectores.</p>
       <div class="panel">
-        <h2>Comunidad online (Firebase gratis)</h2>
-        <div class="campo">
+        <h2>Comunidad online</h2>
+        <div id="cloud-config-status" class="ai-badge ok">Nube compartida activa</div>
+        <div class="campo" style="margin-top:12px;">
           <label for="autor-nombre">Tu nombre / taller</label>
           <input id="autor-nombre" type="text" placeholder="Ej. Velocímetros CDMX" maxlength="40">
-        </div>
-        <div class="campo">
-          <label for="firebase-config">Config Firebase (JSON)</label>
-          <textarea id="firebase-config" rows="7" placeholder='{"apiKey":"...","authDomain":"...","projectId":"...","storageBucket":"...","appId":"..."}'></textarea>
-          <small>
-            1) Entra a <a href="https://console.firebase.google.com/" target="_blank" rel="noopener">Firebase Console</a> (gratis)<br>
-            2) Crea proyecto → Authentication → habilita <strong>Anónimo</strong><br>
-            3) Firestore Database → crear (modo prueba)<br>
-            4) Project settings → Tus apps → Web → copiar la config aquí<br>
-            5) En Firestore → Reglas, pega las reglas del README y Publicar
-          </small>
+          <small>Aparece en las publicaciones de la comunidad.</small>
         </div>
         <div class="acciones">
-          <button type="button" class="btn-principal" id="btn-guardar-cloud">Guardar y conectar nube</button>
+          <button type="button" class="btn-principal" id="btn-guardar-cloud">Guardar nombre</button>
           <button type="button" class="btn-secundario" id="btn-probar-cloud">Probar nube</button>
         </div>
       </div>
@@ -311,9 +303,6 @@
   </div>
 
   <div class="toast" id="toast"></div>
-  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
   <script src="script.js"></script>
 </body>
 </html>

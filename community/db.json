@@ -1,1 +1,6 @@
-{"conectores":[]}
+{
+  "backend": "kvdb.io",
+  "bucket": "2bZdCTGWNeaf2mCZ3kDA8F",
+  "status": "active",
+  "note": "La app publica/lee conectores en este bucket compartido"
+}

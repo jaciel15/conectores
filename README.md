@@ -2,38 +2,19 @@
 
 App web para pineados de velocímetros / clusters 12V.
 
-## Online (clientes)
+## Online (ya activa)
 
-1. Entra a [Firebase Console](https://console.firebase.google.com/) (gratis).
-2. Crea un proyecto → **Authentication** → Sign-in method → habilita **Anónimo**.
-3. **Firestore Database** → crear base (modo producción o prueba).
-4. Project settings → Your apps → Web → copia el objeto `firebaseConfig`.
-5. En la app: **Configuración** → pega el JSON → **Guardar y conectar nube**.
-6. En Firestore → **Rules**, publica:
+La **comunidad online** está activada de fábrica. No necesitas Firebase ni pegar ninguna config.
 
-```
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /conectores/{id} {
-      allow read: if true;
-      allow create, update: if request.auth != null
-        && request.resource.data.keys().hasAll(['id','marca','modelo','pins'])
-        && request.resource.data.marca is string
-        && request.resource.data.modelo is string;
-      allow delete: if request.auth != null
-        && resource.data.uid == request.auth.uid;
-    }
-  }
-}
-```
+- Todos los clientes ven los mismos conectores en **Comunidad online**
+- Al **guardar** un conector, también se intenta publicar a la nube
+- Desde el detalle puedes pulsar **Publicar online**
+- En **Configuración** solo pon el nombre de tu taller (aparece como autor)
 
-Con eso, todos tus clientes ven y publican conectores en **Comunidad online**.
+Sitio: https://jaciel15.github.io/conectores/
 
-## Uso local
-
-Abre `index.html` o https://jaciel15.github.io/conectores/
+## Uso
 
 - Cámara o Galería para fotos
 - Toca un pin → elige 12V / GND / CAN-H (se aplica al instante)
-- Guarda → si la nube está activa, también se publica
+- Guarda → se guarda en el teléfono y se publica online

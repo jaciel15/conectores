@@ -655,8 +655,8 @@ Reglas:
       // Intentar publicar online si la nube está configurada
       publishToCloud(item)
         .then(() => toast("También publicado en comunidad online"))
-        .catch(() => {
-          /* silencioso si no hay nube */
+        .catch((err) => {
+          toast("Guardado local. Nube: " + (err.message || "sin red"));
         });
       showVista("db");
       renderDB();
@@ -879,47 +879,72 @@ Reglas:
     $("api-key").value = cfg.apiKey || "";
     $("modelo-ia").value = cfg.model || "gemini-2.0-flash";
     if ($("autor-nombre")) $("autor-nombre").value = cfg.author || "";
-    if ($("firebase-config")) {
-      $("firebase-config").value = cfg.firebaseConfig
-        ? JSON.stringify(cfg.firebaseConfig, null, 2)
-        : "";
-    }
+    updateCloudConfigBadge();
   }
 
-  /* ===== NUBE / COMUNIDAD (Firebase) ===== */
-  let cloud = { ready: false, db: null, uid: null, error: "" };
+  /* ===== NUBE / COMUNIDAD (activa por defecto) ===== */
+  // Bucket público compartido — todos los clientes leen/publican aquí
+  const CLOUD_BUCKET = "2bZdCTGWNeaf2mCZ3kDA8F";
+  const CLOUD_BASE = `https://kvdb.io/${CLOUD_BUCKET}`;
+  const CLOUD_PREFIX = "c_";
 
-  function getFirebaseConfig() {
-    const cfg = loadConfig();
-    return cfg.firebaseConfig || null;
+  let cloud = { ready: true, error: "" };
+
+  function cloudKey(id) {
+    const safe = String(id || "").replace(/[^a-zA-Z0-9_-]/g, "");
+    return CLOUD_PREFIX + (safe || "x");
   }
 
-  async function initCloud(force = false) {
-    const fbCfg = getFirebaseConfig();
-    if (!fbCfg) {
-      cloud = { ready: false, db: null, uid: null, error: "Sin config Firebase" };
-      return cloud;
-    }
-    if (cloud.ready && !force) return cloud;
-    try {
-      if (!window.firebase) throw new Error("SDK Firebase no cargó");
-      if (!firebase.apps.length) firebase.initializeApp(fbCfg);
-      const auth = firebase.auth();
-      if (!auth.currentUser) await auth.signInAnonymously();
-      cloud = {
-        ready: true,
-        db: firebase.firestore(),
-        uid: auth.currentUser.uid,
-        error: "",
-      };
-    } catch (err) {
-      cloud = { ready: false, db: null, uid: null, error: err.message || "Error nube" };
-    }
+  async function initCloud() {
+    cloud = { ready: true, error: "" };
     return cloud;
   }
 
-  function slimConnectorForCloud(item) {
-    // Compactar fotos para caber en Firestore
+  async function cloudPut(key, data) {
+    const res = await fetch(`${CLOUD_BASE}/${encodeURIComponent(key)}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) throw new Error("No se pudo publicar (" + res.status + ")");
+  }
+
+  async function cloudGet(key) {
+    const res = await fetch(`${CLOUD_BASE}/${encodeURIComponent(key)}`, {
+      headers: { Accept: "application/json" },
+    });
+    if (res.status === 404) return null;
+    if (!res.ok) throw new Error("Error leyendo nube (" + res.status + ")");
+    return res.json();
+  }
+
+  async function cloudListKeys() {
+    const res = await fetch(`${CLOUD_BASE}/?_=${Date.now()}`, {
+      headers: { Accept: "text/plain", "Cache-Control": "no-cache" },
+    });
+    if (!res.ok) throw new Error("Error listando comunidad (" + res.status + ")");
+    const text = (await res.text()).trim();
+    if (!text) return [];
+    return text
+      .split(/\r?\n/)
+      .map((s) => s.trim())
+      .filter((k) => k.startsWith(CLOUD_PREFIX));
+  }
+
+  async function shrinkPhoto(dataUrl) {
+    if (!dataUrl) return null;
+    if (dataUrl.length <= 120000) return dataUrl;
+    try {
+      const small = await compressImage(dataUrl, 720, 0.5);
+      return small.length <= 180000 ? small : null;
+    } catch {
+      return null;
+    }
+  }
+
+  async function slimConnectorForCloud(item) {
+    const fotoConector = await shrinkPhoto(item.fotoConector);
+    const fotoCluster = await shrinkPhoto(item.fotoCluster);
     return {
       id: item.id,
       categoria: item.categoria,
@@ -933,37 +958,39 @@ Reglas:
       pines: item.pines,
       columns: item.columns,
       pins: item.pins,
-      fotoConector: item.fotoConector || null,
-      fotoCluster: item.fotoCluster || null,
+      fotoConector,
+      fotoCluster,
       notas: item.notas || "",
       slug: item.slug || "",
       author: loadConfig().author || "Anónimo",
-      uid: cloud.uid || "",
       updatedAt: item.updatedAt || Date.now(),
       publishedAt: Date.now(),
     };
   }
 
   async function publishToCloud(item) {
-    const c = await initCloud();
-    if (!c.ready) throw new Error("Configura Firebase en Configuración para publicar online");
-    const payload = slimConnectorForCloud(item);
-    // Si las fotos son muy grandes, comprimir más
-    if (payload.fotoConector && payload.fotoConector.length > 350000) {
-      payload.fotoConector = await compressImage(payload.fotoConector, 900, 0.55);
-    }
-    if (payload.fotoCluster && payload.fotoCluster.length > 350000) {
-      payload.fotoCluster = await compressImage(payload.fotoCluster, 900, 0.55);
-    }
-    await c.db.collection("conectores").doc(payload.id).set(payload, { merge: true });
+    await initCloud();
+    const payload = await slimConnectorForCloud(item);
+    await cloudPut(cloudKey(payload.id), payload);
     return payload;
   }
 
   async function fetchCommunity() {
-    const c = await initCloud();
-    if (!c.ready) throw new Error(c.error || "Nube no configurada");
-    const snap = await c.db.collection("conectores").orderBy("publishedAt", "desc").limit(80).get();
-    return snap.docs.map((d) => d.data());
+    await initCloud();
+    const keys = await cloudListKeys();
+    const limited = keys.slice(0, 100);
+    const rows = await Promise.all(
+      limited.map(async (key) => {
+        try {
+          return await cloudGet(key);
+        } catch {
+          return null;
+        }
+      })
+    );
+    return rows
+      .filter((x) => x && x.id && x.marca)
+      .sort((a, b) => (b.publishedAt || 0) - (a.publishedAt || 0));
   }
 
   function setCloudBadge(type, text) {
@@ -973,25 +1000,22 @@ Reglas:
     el.innerHTML = text;
   }
 
+  function updateCloudConfigBadge() {
+    const el = $("cloud-config-status");
+    if (!el) return;
+    el.className = "ai-badge ok";
+    el.textContent = "Nube compartida activa · lista para tus clientes";
+  }
+
   async function renderComunidad() {
     const box = $("lista-comunidad");
     setCloudBadge("warn", `<span class="spinner"></span> Cargando comunidad…`);
     box.innerHTML = "";
     try {
-      const c = await initCloud();
-      if (!c.ready) {
-        setCloudBadge("error", "Nube no activa. Ve a Configuración y pega tu Firebase JSON.");
-        box.innerHTML = `<div class="empty">Para que todos tus clientes vean/suban conectores:<br>
-          1. Configuración → Comunidad online<br>
-          2. Crea proyecto Firebase gratis<br>
-          3. Pega la config y guarda<br>
-          Luego vuelve aquí.</div>`;
-        return;
-      }
       const list = await fetchCommunity();
       setCloudBadge("ok", `Online · ${list.length} conectores públicos`);
       if (!list.length) {
-        box.innerHTML = `<div class="empty">Aún no hay publicaciones. Crea un conector y publícalo.</div>`;
+        box.innerHTML = `<div class="empty">Aún no hay publicaciones. Crea un conector, guárdalo y se publica solo a la comunidad.</div>`;
         return;
       }
       box.innerHTML = list.map((item) => {
@@ -1008,7 +1032,6 @@ Reglas:
         el.addEventListener("click", () => {
           const item = list.find((x) => x.id === el.dataset.cloudId);
           if (!item) return;
-          // Cache local and open detail
           upsertConnector({ ...item, updatedAt: item.updatedAt || Date.now() });
           openDetalle(item.id);
         });
@@ -1020,42 +1043,32 @@ Reglas:
   }
 
   async function saveCloudConfig() {
-    let parsed = null;
-    const raw = ($("firebase-config").value || "").trim();
-    if (raw) {
-      try {
-        parsed = JSON.parse(raw);
-      } catch {
-        toast("JSON de Firebase inválido");
-        return;
-      }
-      if (!parsed.apiKey || !parsed.projectId) {
-        toast("Falta apiKey o projectId en la config");
-        return;
-      }
-    }
     const cfg = loadConfig();
-    cfg.firebaseConfig = parsed;
     cfg.author = ($("autor-nombre").value || "").trim() || "Anónimo";
     saveConfig(cfg);
-    cloud.ready = false;
-    const c = await initCloud(true);
-    if (c.ready) toast("Nube conectada ✔");
-    else toast(c.error || "No se pudo conectar la nube");
+    updateCloudConfigBadge();
+    toast("Nombre de taller guardado · nube ya activa");
   }
 
   async function testCloud() {
     toast("Probando nube…");
-    const c = await initCloud(true);
-    if (!c.ready) {
-      toast(c.error || "Nube no conectada");
-      return;
-    }
     try {
-      await c.db.collection("conectores").limit(1).get();
-      toast("Nube OK · Firestore responde");
+      const keys = await cloudListKeys();
+      toast(`Nube OK · ${keys.length} publicaciones`);
     } catch (err) {
-      toast("Firestore error: " + (err.message || "revisa reglas"));
+      toast("Error de nube: " + (err.message || "sin conexión"));
+    }
+  }
+
+  async function publishCurrent() {
+    const item = loadConnectors().find((x) => x.id === state.detalleId);
+    if (!item) return;
+    toast("Publicando en comunidad…");
+    try {
+      await publishToCloud(item);
+      toast("Publicado online ✔");
+    } catch (err) {
+      toast(err.message || "No se pudo publicar");
     }
   }
 
@@ -1146,6 +1159,7 @@ Reglas:
       renderDB();
     });
     $("btn-editar").addEventListener("click", editCurrent);
+    $("btn-publicar-online").addEventListener("click", () => publishCurrent());
     $("btn-detalle-borrar").addEventListener("click", deleteCurrent);
 
     async function handleFotoScan(file) {
