@@ -4,6 +4,9 @@
   const STORAGE_KEY = "cg_conectores_v2";
   const CONFIG_KEY = "cg_config_v2";
   const THEME_KEY = "cg_theme";
+  const ACCESS_KEY = "cg_taller_unlocked_v1";
+  // Cambia este código antes de compartir el link con tu equipo.
+  const TALLER_ACCESS_CODE = "VELCDMX";
 
   const SENALES = [
     { id: "12V", label: "12V / BATT", color: "#e53935", text: "#fff" },
@@ -44,16 +47,75 @@
     selectedColor: null,
     dbPath: { categoria: null, marca: null, modelo: null },
     detalleId: null,
+    cloudList: [],
   };
 
   const $ = (id) => document.getElementById(id);
 
-  function toast(msg) {
+  function toast(msg, ms = 2600) {
     const el = $("toast");
     el.textContent = msg;
     el.classList.add("show");
     clearTimeout(toast._t);
-    toast._t = setTimeout(() => el.classList.remove("show"), 2600);
+    toast._t = setTimeout(() => el.classList.remove("show"), ms);
+  }
+
+  function formatAgo(ts) {
+    const n = Number(ts) || 0;
+    if (!n) return "Sin fecha";
+    const diff = Math.max(0, Date.now() - n);
+    const m = Math.floor(diff / 60000);
+    if (m < 1) return "Ahora";
+    if (m < 60) return `Hace ${m} min`;
+    const h = Math.floor(m / 60);
+    if (h < 24) return `Hace ${h} h`;
+    const d = Math.floor(h / 24);
+    if (d < 7) return `Hace ${d} d`;
+    return new Date(n).toLocaleDateString("es-MX", { day: "2-digit", month: "short" });
+  }
+
+  function updateMenuStatus() {
+    const el = $("menu-status");
+    if (!el) return;
+    const cfg = loadConfig();
+    const n = loadConnectors().length;
+    const name = (cfg.author || "").trim();
+    el.textContent = name
+      ? `${name} · ${n} conector${n === 1 ? "" : "es"} en este teléfono`
+      : `Listo en este dispositivo · ${n} local${n === 1 ? "" : "es"}`;
+  }
+
+  function syncThemeButtons() {
+    const dark = (document.documentElement.getAttribute("data-theme") || "light") === "dark";
+    const btnMenu = $("btn-tema-menu");
+    const btnMenuClaro = $("btn-tema-menu-claro");
+    if (btnMenu) btnMenu.classList.toggle("hidden", dark);
+    if (btnMenuClaro) btnMenuClaro.classList.toggle("hidden", !dark);
+  }
+
+  function maybeAskAuthor() {
+    const cfg = loadConfig();
+    if ((cfg.author || "").trim()) {
+      updateMenuStatus();
+      return;
+    }
+    const overlay = $("prompt-autor");
+    if (!overlay) return;
+    overlay.classList.remove("hidden");
+    const input = $("prompt-autor-input");
+    if (input) setTimeout(() => input.focus(), 80);
+  }
+
+  function saveAuthorFromPrompt() {
+    const input = $("prompt-autor-input");
+    const name = (input && input.value ? input.value : "").trim() || "Anónimo";
+    const cfg = loadConfig();
+    cfg.author = name;
+    saveConfig(cfg);
+    if ($("autor-nombre")) $("autor-nombre").value = name;
+    $("prompt-autor").classList.add("hidden");
+    updateMenuStatus();
+    toast("Listo, " + name);
   }
 
   function loadConfig() {
@@ -81,7 +143,7 @@
   }
 
   function uid() {
-    return "c_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+    return "id_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
   }
 
   function applyTheme(theme) {
@@ -90,6 +152,7 @@
     localStorage.setItem(THEME_KEY, t);
     const btn = $("btn-tema");
     if (btn) btn.textContent = t === "dark" ? "☀ Claro" : "🌙 Oscuro";
+    syncThemeButtons();
   }
 
   function toggleTheme() {
@@ -652,12 +715,6 @@ Reglas:
         marca: item.marca,
         modelo: item.modelo,
       };
-      // Intentar publicar online si la nube está configurada
-      publishToCloud(item)
-        .then(() => toast("También publicado en comunidad online"))
-        .catch((err) => {
-          toast("Guardado local. Nube: " + (err.message || "sin red"));
-        });
       showVista("db");
       renderDB();
     } catch (err) {
@@ -792,6 +849,17 @@ Reglas:
     $("detalle-titulo").textContent = `${item.marca} ${item.modelo}`;
     $("detalle-meta").textContent = `${titleCase(item.categoria)} · ${item.version} · ${item.voltaje} · ${item.filas} filas · ${item.pines} pines${item.notas ? " · " + item.notas : ""}`;
     setPreview("detalle-foto", item.fotoConector || item.fotoCluster, "Sin foto");
+    const badge = $("detalle-nube-badge");
+    if (badge) {
+      badge.classList.remove("hidden");
+      if (item.publishedAt) {
+        badge.className = "ai-badge ok";
+        badge.textContent = `En la nube · ${formatAgo(item.publishedAt)} · ${item.author || "Anónimo"}`;
+      } else {
+        badge.className = "ai-badge warn";
+        badge.textContent = "Aún no publicado al taller";
+      }
+    }
     renderPinout(
       "pinout-detalle",
       item.pins || [],
@@ -882,13 +950,72 @@ Reglas:
     updateCloudConfigBadge();
   }
 
-  /* ===== NUBE / COMUNIDAD (activa por defecto) ===== */
-  // Bucket público compartido — todos los clientes leen/publican aquí
+  /* ===== NUBE DEL TALLER (publicación manual) ===== */
+  // Bucket del taller — solo se usa tras el código de acceso de la app
   const CLOUD_BUCKET = "2bZdCTGWNeaf2mCZ3kDA8F";
   const CLOUD_BASE = `https://kvdb.io/${CLOUD_BUCKET}`;
   const CLOUD_PREFIX = "c_";
 
   let cloud = { ready: true, error: "" };
+
+  function isUnlocked() {
+    return localStorage.getItem(ACCESS_KEY) === "1";
+  }
+
+  function setUnlocked(on) {
+    if (on) localStorage.setItem(ACCESS_KEY, "1");
+    else localStorage.removeItem(ACCESS_KEY);
+  }
+
+  function normalizeAccessCode(value) {
+    return String(value || "").trim().toUpperCase();
+  }
+
+  function showAccessGate() {
+    $("splash").style.display = "none";
+    $("app").style.display = "none";
+    $("topbar").classList.add("hidden");
+    $("acceso").classList.remove("hidden");
+    const input = $("acceso-codigo");
+    if (input) {
+      input.value = "";
+      setTimeout(() => input.focus(), 50);
+    }
+  }
+
+  function enterApp() {
+    $("acceso").classList.add("hidden");
+    $("splash").style.display = "none";
+    $("app").style.display = "block";
+    $("topbar").classList.add("hidden");
+    updateMenuStatus();
+    maybeAskAuthor();
+  }
+
+  function tryUnlock(code) {
+    const ok = normalizeAccessCode(code) === normalizeAccessCode(TALLER_ACCESS_CODE);
+    const err = $("acceso-error");
+    const form = $("form-acceso");
+    if (!ok) {
+      if (err) err.classList.remove("hidden");
+      if (form) {
+        form.classList.remove("shake");
+        void form.offsetWidth;
+        form.classList.add("shake");
+      }
+      return false;
+    }
+    if (err) err.classList.add("hidden");
+    setUnlocked(true);
+    enterApp();
+    return true;
+  }
+
+  function logoutTaller() {
+    setUnlocked(false);
+    showAccessGate();
+    toast("Sesión cerrada");
+  }
 
   function cloudKey(id) {
     const safe = String(id || "").replace(/[^a-zA-Z0-9_-]/g, "");
@@ -1000,42 +1127,72 @@ Reglas:
     const el = $("cloud-config-status");
     if (!el) return;
     el.className = "ai-badge ok";
-    el.textContent = "Nube compartida activa · lista para tus clientes";
+    el.textContent = "Nube del taller · publicación manual";
   }
 
   async function renderComunidad() {
     const box = $("lista-comunidad");
-    setCloudBadge("warn", `<span class="spinner"></span> Cargando comunidad…`);
+    setCloudBadge("warn", `<span class="spinner"></span> Cargando nube del taller…`);
     box.innerHTML = "";
     try {
       const list = await fetchCommunity();
-      setCloudBadge("ok", `Online · ${list.length} conectores públicos`);
-      if (!list.length) {
-        box.innerHTML = `<div class="empty">Aún no hay publicaciones. Crea un conector, guárdalo y se publica solo a la comunidad.</div>`;
-        return;
-      }
-      box.innerHTML = list.map((item) => {
-        const img = item.fotoConector || item.fotoCluster || "";
-        return `<div class="card-item" data-cloud-id="${escapeAttr(item.id)}">
-          ${img ? `<img src="${img}" alt="">` : `<div class="preview-box" style="min-height:78px;width:78px;"><div class="placeholder">Sin foto</div></div>`}
-          <div>
-            <h3>${escapeHtml(item.marca)} ${escapeHtml(item.modelo)} · ${escapeHtml(item.version || "V1")}</h3>
-            <p>${escapeHtml(item.modulo || "DASH")} · ${item.pines || 0} pines · por ${escapeHtml(item.author || "Anónimo")}</p>
-          </div>
-        </div>`;
-      }).join("");
-      box.querySelectorAll("[data-cloud-id]").forEach((el) => {
-        el.addEventListener("click", () => {
-          const item = list.find((x) => x.id === el.dataset.cloudId);
-          if (!item) return;
-          upsertConnector({ ...item, updatedAt: item.updatedAt || Date.now() });
-          openDetalle(item.id);
-        });
-      });
+      state.cloudList = list;
+      paintComunidadList();
     } catch (err) {
       setCloudBadge("error", err.message || "Error al cargar");
       box.innerHTML = `<div class="empty">${escapeHtml(err.message || "Error")}</div>`;
     }
+  }
+
+  function paintComunidadList() {
+    const box = $("lista-comunidad");
+    if (!box) return;
+    const list = state.cloudList || [];
+    const q = (($("cloud-buscar") && $("cloud-buscar").value) || "").trim().toLowerCase();
+    const filtered = !q
+      ? list
+      : list.filter((item) => {
+          const blob = `${item.marca || ""} ${item.modelo || ""} ${item.version || ""} ${item.author || ""} ${item.modulo || ""}`.toLowerCase();
+          return blob.includes(q);
+        });
+    setCloudBadge("ok", q
+      ? `Taller · ${filtered.length} de ${list.length}`
+      : `Taller · ${list.length} conectores compartidos`);
+    if (!list.length) {
+      box.innerHTML = `<div class="empty">Aún no hay publicaciones. Guarda un conector en local y pulsa «Publicar al taller» en el detalle.</div>`;
+      return;
+    }
+    if (!filtered.length) {
+      box.innerHTML = `<div class="empty">Nada coincide con “${escapeHtml(q)}”.</div>`;
+      return;
+    }
+    box.innerHTML = filtered.map((item) => {
+      const img = item.fotoConector || item.fotoCluster || "";
+      return `<div class="card-item cloud-card" data-cloud-id="${escapeAttr(item.id)}">
+        ${img ? `<img src="${img}" alt="">` : `<div class="preview-box" style="min-height:78px;width:78px;"><div class="placeholder">Sin foto</div></div>`}
+        <div>
+          <h3>${escapeHtml(item.marca)} ${escapeHtml(item.modelo)} · ${escapeHtml(item.version || "V1")}</h3>
+          <p>${escapeHtml(item.modulo || "DASH")} · ${item.pines || 0} pines · por ${escapeHtml(item.author || "Anónimo")}</p>
+          <div class="cloud-meta">
+            <span>${escapeHtml(formatAgo(item.publishedAt || item.updatedAt))}</span>
+            <span>Toca para abrir</span>
+          </div>
+        </div>
+      </div>`;
+    }).join("");
+    box.querySelectorAll("[data-cloud-id]").forEach((el) => {
+      el.addEventListener("click", () => {
+        const item = list.find((x) => x.id === el.dataset.cloudId);
+        if (!item) return;
+        upsertConnector({
+          ...item,
+          publishedAt: item.publishedAt || Date.now(),
+          updatedAt: item.updatedAt || Date.now(),
+        });
+        toast("Descargado a este teléfono");
+        openDetalle(item.id);
+      });
+    });
   }
 
   async function saveCloudConfig() {
@@ -1043,7 +1200,8 @@ Reglas:
     cfg.author = ($("autor-nombre").value || "").trim() || "Anónimo";
     saveConfig(cfg);
     updateCloudConfigBadge();
-    toast("Nombre de taller guardado · nube ya activa");
+    updateMenuStatus();
+    toast("Nombre de taller guardado");
   }
 
   async function testCloud() {
@@ -1059,10 +1217,27 @@ Reglas:
   async function publishCurrent() {
     const item = loadConnectors().find((x) => x.id === state.detalleId);
     if (!item) return;
-    toast("Publicando en comunidad…");
+    const cfg = loadConfig();
+    if (!(cfg.author || "").trim()) {
+      maybeAskAuthor();
+      toast("Pon tu nombre antes de publicar");
+      return;
+    }
+    toast("Publicando en nube del taller…");
     try {
-      await publishToCloud(item);
-      toast("Publicado online ✔");
+      const payload = await publishToCloud(item);
+      const list = loadConnectors();
+      const idx = list.findIndex((x) => x.id === item.id);
+      if (idx >= 0) {
+        list[idx] = {
+          ...list[idx],
+          publishedAt: payload.publishedAt || Date.now(),
+          author: payload.author || cfg.author,
+        };
+        saveConnectors(list);
+      }
+      toast("Publicado en el taller ✔ Ya lo pueden ver los demás", 3200);
+      openDetalle(item.id);
     } catch (err) {
       toast(err.message || "No se pudo publicar");
     }
@@ -1096,8 +1271,7 @@ Reglas:
     const mensajes = [
       "Cargando módulos...",
       "Preparando escáner...",
-      "Inicializando Pinout Engine...",
-      "Conectando base de datos...",
+      "Verificando acceso del taller...",
       "Sistema listo...",
     ];
     let percent = 0;
@@ -1112,9 +1286,8 @@ Reglas:
       if (percent >= 100) {
         clearInterval(timer);
         setTimeout(() => {
-          $("splash").style.display = "none";
-          $("app").style.display = "block";
-          $("topbar").classList.add("hidden");
+          if (isUnlocked()) enterApp();
+          else showAccessGate();
         }, 350);
       }
     }, 120);
@@ -1127,6 +1300,26 @@ Reglas:
     $("btn-tema-menu").addEventListener("click", () => applyTheme("dark"));
     $("btn-tema-menu-claro").addEventListener("click", () => applyTheme("light"));
     $("btn-cerrar-vista").addEventListener("click", cerrarVista);
+
+    $("form-acceso").addEventListener("submit", (e) => {
+      e.preventDefault();
+      tryUnlock($("acceso-codigo").value);
+    });
+    $("btn-cerrar-sesion").addEventListener("click", logoutTaller);
+    if ($("btn-prompt-autor")) {
+      $("btn-prompt-autor").addEventListener("click", saveAuthorFromPrompt);
+    }
+    if ($("prompt-autor-input")) {
+      $("prompt-autor-input").addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          saveAuthorFromPrompt();
+        }
+      });
+    }
+    if ($("cloud-buscar")) {
+      $("cloud-buscar").addEventListener("input", () => paintComunidadList());
+    }
 
     $("btn-escanear").addEventListener("click", () => showVista("escanear"));
     $("btn-nuevo").addEventListener("click", () => {
@@ -1258,6 +1451,7 @@ Reglas:
   }
 
   function openFromHash() {
+    if (!isUnlocked()) return;
     const hash = (location.hash || "").replace("#", "").toLowerCase();
     const forced = sessionStorage.getItem("cg_open");
     if (forced) sessionStorage.removeItem("cg_open");

@@ -2,5 +2,5 @@
   "backend": "kvdb.io",
   "bucket": "2bZdCTGWNeaf2mCZ3kDA8F",
   "status": "active",
-  "note": "La app publica/lee conectores en este bucket compartido"
+  "note": "Nube del taller. La app pide código de acceso; publicar es manual."
 }

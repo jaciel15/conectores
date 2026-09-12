@@ -3,15 +3,49 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#0b8fa3">
   <title>Connector Generator — Velocímetros 12V</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Sora:wght@600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div id="splash">
+    <p class="brand-chip">Taller privado · 12V</p>
     <h1>CONNECTOR GENERATOR</h1>
-    <h2>Velocímetros digitales 12V · CDMX</h2>
+    <h2>Velocímetros digitales · CDMX</h2>
     <div class="loading-box"><div id="loading-bar"></div></div>
     <p id="status">Iniciando sistema...</p>
+  </div>
+
+  <div id="acceso" class="hidden" aria-live="polite">
+    <p class="brand-chip">Acceso restringido</p>
+    <h1>CONNECTOR GENERATOR</h1>
+    <h2>Código del taller</h2>
+    <p class="acceso-copy">Solo tu equipo entra aquí. Lo que publiques en la nube lo ven los demás del taller.</p>
+    <form id="form-acceso" class="acceso-form" autocomplete="off">
+      <div class="campo">
+        <label for="acceso-codigo">Código de acceso</label>
+        <input id="acceso-codigo" type="password" inputmode="text" maxlength="32" placeholder="Escribe el código" required>
+      </div>
+      <p id="acceso-error" class="acceso-error hidden">Código incorrecto</p>
+      <button type="submit" class="btn-principal" id="btn-acceso">Entrar al taller</button>
+    </form>
+  </div>
+
+  <div id="prompt-autor" class="prompt-overlay hidden" aria-live="polite">
+    <div class="prompt-card">
+      <p class="brand-chip">Un paso más</p>
+      <h2>¿Cómo te ven en la nube?</h2>
+      <p class="acceso-copy">Este nombre aparece cuando publicas un conector al taller.</p>
+      <div class="campo">
+        <label for="prompt-autor-input">Tu nombre / taller</label>
+        <input id="prompt-autor-input" type="text" maxlength="40" placeholder="Ej. Velocímetros CDMX">
+      </div>
+      <button type="button" class="btn-principal" id="btn-prompt-autor">Continuar</button>
+    </div>
   </div>
 
   <div class="topbar hidden" id="topbar">
@@ -22,18 +56,22 @@
 
   <div id="app">
     <section id="vista-menu" class="vista visible">
-      <div class="fila-botones" style="margin-bottom:14px;">
-        <button type="button" class="btn-secundario" id="btn-tema-menu">🌙 Fondo oscuro</button>
-        <button type="button" class="btn-secundario" id="btn-tema-menu-claro">☀ Fondo claro</button>
+      <div class="menu-hero">
+        <div class="menu-hero-top">
+          <p class="brand-chip">Taller privado</p>
+          <button type="button" class="btn-secundario btn-tema-mini" id="btn-tema-menu">🌙 Oscuro</button>
+          <button type="button" class="btn-secundario btn-tema-mini hidden" id="btn-tema-menu-claro">☀ Claro</button>
+        </div>
+        <h1 class="titulo">CONNECTOR GENERATOR</h1>
+        <p class="subtitulo">Escanea el conector, etiqueta 12V / GND / CAN y compártelo con tu equipo cuando quieras.</p>
+        <div id="menu-status" class="menu-status">Listo en este dispositivo</div>
       </div>
-      <h1 class="titulo">CONNECTOR GENERATOR</h1>
-      <p class="subtitulo">Toma o sube la foto del conector. La IA detecta filas y pines. Guarda por Motocicletas → Marca → Modelo → Versión.</p>
-      <div class="acciones">
+      <div class="acciones acciones-menu">
         <button type="button" id="btn-escanear">📷 Escanear / subir foto</button>
         <button type="button" id="btn-nuevo">➕ Nuevo conector 12V</button>
-        <button type="button" id="btn-comunidad">🌐 Comunidad online</button>
-        <button type="button" id="btn-db">📁 Mis conectores (local)</button>
-        <button type="button" id="btn-config">⚙ Configuración</button>
+        <button type="button" class="btn-principal" id="btn-comunidad">☁ Nube del taller</button>
+        <button type="button" class="btn-secundario" id="btn-db">📁 Mis conectores (local)</button>
+        <button type="button" class="btn-secundario" id="btn-config">⚙ Configuración</button>
       </div>
     </section>
 
@@ -201,9 +239,13 @@
     </section>
 
     <section id="vista-comunidad" class="vista">
-      <h1 class="titulo">Comunidad online</h1>
-      <p class="subtitulo">Nube compartida activa. Conectores publicados por todos tus clientes, en cualquier dispositivo.</p>
+      <h1 class="titulo">Nube del taller</h1>
+      <p class="subtitulo">Lo que publique uno, lo ven todos los del taller. Publicar es manual desde el detalle del conector.</p>
       <div id="cloud-status" class="ai-badge warn">Comprobando nube…</div>
+      <div class="campo cloud-search">
+        <label for="cloud-buscar">Buscar en la nube</label>
+        <input id="cloud-buscar" type="search" placeholder="Marca, modelo o autor" autocomplete="off">
+      </div>
       <div class="fila-botones" style="margin:12px 0;">
         <button type="button" class="btn-secundario" id="btn-comunidad-atras">⬅ Menú</button>
         <button type="button" class="btn-secundario" id="btn-comunidad-refresh">↻ Actualizar</button>
@@ -213,7 +255,7 @@
 
     <section id="vista-db" class="vista">
       <h1 class="titulo">Mis conectores</h1>
-      <p class="subtitulo">Guardados en este dispositivo. Puedes publicarlos a la comunidad online.</p>
+      <p class="subtitulo">Guardados en este dispositivo. Si quieres, publícalos a la nube del taller desde el detalle.</p>
       <div class="breadcrumbs" id="db-crumbs"></div>
       <div class="fila-botones" style="margin-bottom:12px;">
         <button type="button" class="btn-secundario" id="btn-db-atras">⬅ Atrás</button>
@@ -224,13 +266,14 @@
 
     <section id="vista-detalle" class="vista">
       <h1 class="titulo" id="detalle-titulo">Conector</h1>
+      <div id="detalle-nube-badge" class="ai-badge warn hidden">Aún no publicado al taller</div>
       <div class="panel">
         <div class="preview-box" id="detalle-foto"><div class="placeholder">Sin foto</div></div>
         <p id="detalle-meta" class="subtitulo" style="margin-top:12px;"></p>
         <div id="pinout-detalle" class="ficha-host"></div>
         <div class="acciones" style="margin-top:14px;">
           <button type="button" class="btn-principal" id="btn-editar">✏️ Editar conector</button>
-          <button type="button" class="btn-secundario" id="btn-publicar-online">☁ Publicar online</button>
+          <button type="button" class="btn-principal" id="btn-publicar-online">☁ Publicar al taller</button>
           <button type="button" class="btn-secundario" id="btn-detalle-atras">⬅ Atrás</button>
           <button type="button" class="btn-peligro" id="btn-detalle-borrar">🗑 Borrar</button>
         </div>
@@ -239,14 +282,22 @@
 
     <section id="vista-config" class="vista">
       <h1 class="titulo">Configuración</h1>
-      <p class="subtitulo">La nube compartida ya está activa: todos tus clientes ven y publican conectores.</p>
+      <p class="subtitulo">Acceso privado del taller. La nube no publica sola: solo cuando tú lo indiques.</p>
       <div class="panel">
-        <h2>Comunidad online</h2>
-        <div id="cloud-config-status" class="ai-badge ok">Nube compartida activa</div>
+        <h2>Acceso</h2>
+        <div class="ai-badge ok">Sesión del taller activa en este dispositivo</div>
+        <p class="subtitulo" style="margin-top:10px;text-align:left;">Cierra sesión para pedir el código otra vez.</p>
+        <div class="acciones">
+          <button type="button" class="btn-peligro" id="btn-cerrar-sesion">Cerrar sesión</button>
+        </div>
+      </div>
+      <div class="panel">
+        <h2>Nube del taller</h2>
+        <div id="cloud-config-status" class="ai-badge ok">Nube del taller · publicación manual</div>
         <div class="campo" style="margin-top:12px;">
           <label for="autor-nombre">Tu nombre / taller</label>
           <input id="autor-nombre" type="text" placeholder="Ej. Velocímetros CDMX" maxlength="40">
-          <small>Aparece en las publicaciones de la comunidad.</small>
+          <small>Aparece en las publicaciones de la nube del taller.</small>
         </div>
         <div class="acciones">
           <button type="button" class="btn-principal" id="btn-guardar-cloud">Guardar nombre</button>
